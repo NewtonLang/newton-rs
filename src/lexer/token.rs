@@ -3,14 +3,47 @@
  * Newton (C) 2023
  */
 
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Token {
-    pub lexeme: String,
-    pub token_type: TokenType,
-    pub location: (u8, u8)
+    lexeme: String,
+    token_type: TokenType,
+    location: (u8, u8)
 }
 
-impl Token {}
+impl Token {
+    pub fn new(&self, lexeme: String, token_type: TokenType, location: (u8, u8)) -> Self {
+        Self {
+            lexeme,
+            token_type,
+            location,
+        }
+    }
 
+    pub fn from(&self, lexeme: String, token_type: TokenType) -> Self {
+        Self {
+            lexeme,
+            token_type,
+            location: (0, 0),
+        }
+    }
+
+    #[inline]
+    pub fn lexeme(&mut self) -> String {
+        self.lexeme.to_owned()
+    }
+
+    #[inline]
+    pub fn token_type(&mut self) -> TokenType {
+        self.token_type
+    }
+
+    #[inline]
+    pub fn location(&mut self) -> (u8, u8) {
+        self.location
+    }
+}
+
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 pub enum TokenType {
     Eof = -1,
     Newline = 0,
