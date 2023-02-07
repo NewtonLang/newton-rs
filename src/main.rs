@@ -1,3 +1,5 @@
+use std::borrow::Borrow;
+
 use newton_rs::ast::ast::*;
 use newton_rs::types::types::*;
 use newton_rs::semantic::error::*;
@@ -7,7 +9,7 @@ fn main() {
     let u64 = Type::Simple(Simple::Integer(Integer::new_unsigned_int(64, u64::MAX)));
     let f32 = Type::Simple(Simple::Float(Float::new_f32(f32::MAX)));
     let f64 = Type::Simple(Simple::Float(Float::new_f64(f64::MAX)));
-    let my_type = Type::Simple(Simple::UserDefinedType(UserIdentifier::new("std".to_string(), "str".to_string())));
+    let my_type = Type::Simple(Simple::UserDefinedType(UserIdentifier::new("std", "str")));
     let ptr = Type::Complex(Complex::Pointer(Pointer::new(Simple::Void, 2)));
     let sized_arr = Type::Complex(Complex::Array(Array::new(Simple::Character, Some(13))));
     let unsized_arr = Type::Complex(Complex::Array(Array::new(Simple::Character, None)));
@@ -31,13 +33,19 @@ fn main() {
     println!("{}", bool);
     println!("{}", varargs);
 
-    // Incorrect function signature to test error handling. This will error.
-    // let main_function = Function::new("main".to_string(), vec![ FieldOrArgument::new("argc".to_string(), Type::Simple(Simple::Void)), FieldOrArgument::new("argv".to_string(), Type::Simple(Simple::Void)) ], Type::Simple(Simple::Integer(Integer::new_signed_int(32, 0))), vec![]);
+    let mut incorrect_signature = std::collections::BTreeMap::new();
+    incorrect_signature.insert("argc", FieldOrArgument::new("argc", Type::Simple(Simple::Void)));
+    incorrect_signature.insert("argv", FieldOrArgument::new("argv", Type::Simple(Simple::Void)));
 
-    // Correct function signature, should not error.
-    let main_function = Function::new("main".to_string(), vec![ FieldOrArgument::new("argc".to_string(), Type::Simple(Simple::Integer(Integer::new_signed_int(32, 0)))), FieldOrArgument::new("argv".to_string(), Type::Complex(Complex::Array(Array::new(Simple::String, None)))) ], Type::Simple(Simple::Integer(Integer::new_signed_int(32, 0))), vec![]);
+    let mut correct_signature = std::collections::BTreeMap::new();
+    correct_signature.insert("argc", FieldOrArgument::new("argc", Type::Simple(Simple::Integer(Integer::new_signed_int(32, 0)))));
+    correct_signature.insert("argv", FieldOrArgument::new("argv", Type::Complex(Complex::Array(Array::new(Simple::String, None)))));
 
-    if main_function.get_argument("argc".to_string()).ttype() != &Type::Simple(Simple::Integer(Integer::new_signed_int(32, 0))) && main_function.get_argument("argv".to_string()).ttype() != &Type::Complex(Complex::Array(Array::new(Simple::String, None))) {
-        panic!("{}", Error::MismatchedMainFunctionArgumentsError(MismatchedMainFunctionArgumentsError {  }))
+    // Testing Newton's rather primitive error handling. Switch `correct_signature` for `incorrect_signature` and *hopefully* you'll see a panic in the console.
+    let main_function = Function::new("main", incorrect_signature.clone(), Type::Simple(Simple::Integer(Integer::new_signed_int(32, 0))), vec![]);
+
+    //if main_function.get_argument("argc").ttype() != &Type::Simple(Simple::Integer(Integer::new_signed_int(32, 0))) && main_function.get_argument("argv").ttype() != &Type::Complex(Complex::Array(Array::new(Simple::String, None))) {
+    if main_function.check_if_signature_is(&incorrect_signature.clone()) {
+        panic!("{}", Error::MismatchedMainFunctionArgumentsError(MismatchedMainFunctionArgumentsError::new(format!("{}", main_function))));
     }
 }

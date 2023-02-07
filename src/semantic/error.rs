@@ -45,17 +45,32 @@ impl std::fmt::Display for NoMainFunctionError {
 
 impl std::error::Error for NoMainFunctionError {}
 
-pub struct MismatchedMainFunctionArgumentsError {}
+pub struct MismatchedMainFunctionArgumentsError {
+    signature_found: String,
+}
+
+impl MismatchedMainFunctionArgumentsError {
+    pub fn new(signature_found: String) -> Self {
+        Self {
+            signature_found,
+        }
+    }
+
+    #[inline]
+    pub fn signature_found(&self) -> String {
+        self.signature_found.to_string()
+    }
+}
 
 impl std::fmt::Debug for MismatchedMainFunctionArgumentsError {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "Mismatched arguments for `main` function. Correct signature should be `fn main(argc: i32, argv: [?]string) => i32 {{}}`")
+        write!(f, "Mismatched arguments for `main` function.\nCorrect signature should be `fn main(argc: i32, argv: [?]string) => i32 {{}}`\nGot signature `{}` instead.", self.signature_found)
     }
 }
 
 impl std::fmt::Display for MismatchedMainFunctionArgumentsError {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "Mismatched arguments for `main` function. Correct signature should be `fn main(argc: i32, argv: [?]string) => i32 {{}}`")
+        write!(f, "Mismatched arguments for `main` function.\nCorrect signature should be `fn main(argc: i32, argv: [?]string) => i32 {{}}`\nGot signature `{}` instead.", self.signature_found)
     }
 }
 

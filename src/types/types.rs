@@ -2,12 +2,12 @@ use either::*;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct UserIdentifier {
-    file: String,
-    name: String
+    file: &'static str,
+    name: &'static str
 }
 
 impl UserIdentifier {
-    pub fn new(file: String, name: String) -> Self {
+    pub fn new(file: &'static str, name: &'static str) -> Self {
         Self {
             file,
             name
@@ -90,8 +90,8 @@ impl Type {
 impl std::fmt::Display for Type {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         match self {
-            Type::Simple(ty) => write!(f, "{}", ty.to_string()),
-            Type::Complex(ty) => write!(f, "{}", ty.to_string()),
+            Type::Simple(ty) => write!(f, "{}", ty),
+            Type::Complex(ty) => write!(f, "{}", ty),
         }
     }
 }

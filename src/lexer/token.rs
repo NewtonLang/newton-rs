@@ -5,13 +5,13 @@
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Token {
-    lexeme: String,
+    lexeme: &'static str,
     token_type: TokenType,
     location: (u8, u8)
 }
 
 impl Token {
-    pub fn new(&self, lexeme: String, token_type: TokenType, location: (u8, u8)) -> Self {
+    pub fn new(&self, lexeme: &'static str, token_type: TokenType, location: (u8, u8)) -> Self {
         Self {
             lexeme,
             token_type,
@@ -19,7 +19,7 @@ impl Token {
         }
     }
 
-    pub fn from(&self, lexeme: String, token_type: TokenType) -> Self {
+    pub fn from(&self, lexeme: &'static str, token_type: TokenType) -> Self {
         Self {
             lexeme,
             token_type,
