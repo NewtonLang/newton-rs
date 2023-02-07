@@ -1,3 +1,5 @@
+use either::*;
+
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct UserIdentifier {
     file: String,
@@ -5,7 +7,7 @@ pub struct UserIdentifier {
 }
 
 impl UserIdentifier {
-    pub fn new(&mut self, file: String, name: String) -> Self {
+    pub fn new(file: String, name: String) -> Self {
         Self {
             file,
             name
@@ -27,7 +29,7 @@ impl std::fmt::Display for UserIdentifier {
     }
 }
 
-#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Type {
     Simple(Simple),
     Complex(Complex),
@@ -85,12 +87,25 @@ impl Type {
     }
 }
 
-#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
+impl std::fmt::Display for Type {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        match self {
+            Type::Simple(ty) => write!(f, "{}", ty.to_string()),
+            Type::Complex(ty) => write!(f, "{}", ty.to_string()),
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
 pub enum Simple {
     String,
     Integer(Integer),
     Float(Float),
     Character,
+    Void,
+    Bool,
+    UserDefinedType(UserIdentifier),
+    VarArgs,
 }
 
 impl Simple {
@@ -104,54 +119,136 @@ impl Simple {
 
 impl std::fmt::Display for Simple {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "")
+        match self {
+            Self::String => write!(f, "string"),
+            Self::Character => write!(f, "char"),
+            Self::Void => write!(f, "void"),
+            Self::Bool => write!(f, "bool"),
+            Self::VarArgs => write!(f, "..."),
+
+            Self::Integer(ty) => write!(f, "{}", ty),
+            Self::Float(ty) => write!(f, "{}", ty),
+            Self::UserDefinedType(ty) => write!(f, "{}", ty),
+        }
     }
 }
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
-pub struct Integer {}
+pub struct Integer {
+    size: u8,
+    signed: bool,
+    value: Either<i64, u64>,
+}
 
-impl Integer {}
+impl Integer {
+    pub fn new_signed_int(size: u8, value: i64) -> Self {
+        Self {
+            size,
+            signed: true,
+            value: Left(value)
+        }
+    }
+
+    pub fn new_unsigned_int(size: u8, value: u64) -> Self {
+        Self {
+            size,
+            signed: false,
+            value: Right(value)
+        }
+    }
+
+    #[inline]
+    pub fn size(&mut self) -> u8 {
+        self.size
+    }
+
+    #[inline]
+    pub fn signed(&mut self) -> bool {
+        self.signed
+    }
+
+    #[inline]
+    pub fn value(&mut self) -> Either<i64, u64> {
+        self.value
+    }
+}
 
 impl std::fmt::Display for Integer {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "")
+        if self.signed {
+            write!(f, "i{}", self.size)
+        } else {
+            write!(f, "u{}", self.size)
+        }
     }
 }
 
-#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
-pub struct Float {}
+#[derive(Debug, Copy, Clone, PartialEq)]
+pub struct Float {
+    size: u8,
+    value: Either<f32, f64>,
+}
 
-impl Float {}
+impl Float {
+    pub fn new_f32(value: f32) -> Self {
+        Self {
+            size: 32,
+            value: Left(value),
+        }
+    }
+
+    pub fn new_f64(value: f64) -> Self {
+        Self {
+            size: 64,
+            value: Right(value),
+        }
+    }
+
+    #[inline]
+    pub fn size(&mut self) -> u8 {
+        self.size
+    }
+
+    #[inline]
+    pub fn value(&mut self) -> Either<f32, f64> {
+        self.value
+    }
+}
 
 impl std::fmt::Display for Float {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "")
+        match self.size {
+            32 => write!(f, "f32"),
+            64 => write!(f, "f64"),
+
+            _ => write!(f, "floats cannot have any size other than 32 or 64 so this is pointless lol"),
+        }
     }
 }
 
-#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Complex {
     Pointer(Pointer),
     Array(Array),
 }
 
-impl Complex {}
-
 impl std::fmt::Display for Complex {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "")
+        match self {
+            Self::Pointer(ptr) => write!(f, "{}", ptr),
+            Self::Array(arr) => write!(f, "{}", arr),
+        }
     }
 }
 
-#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Pointer {
     base_type: Simple,
     size: u8,
 }
 
 impl Pointer {
-    pub fn new(&self, base_type: Simple, size: u8) -> Self {
+    pub fn new(base_type: Simple, size: u8) -> Self {
         if size > 2 {
             println!("ERROR : pointer cannot be more than `**` long.")
         }
@@ -169,14 +266,14 @@ impl std::fmt::Display for Pointer {
     }
 }
 
-#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Array {
     base_type: Simple,
     size: u64,
 }
 
 impl Array {
-    pub fn new(&self, base_type: Simple, size: u64) -> Self {
+    pub fn new(base_type: Simple, size: u64) -> Self {
         Self {
             base_type,
             size
@@ -184,8 +281,8 @@ impl Array {
     }
 
     #[inline]
-    pub fn base_type(&mut self) -> Simple {
-        self.base_type
+    pub fn base_type(&mut self) -> &Simple {
+        &self.base_type
     }
 
     #[inline]
