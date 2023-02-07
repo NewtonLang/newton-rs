@@ -7,8 +7,8 @@ fn main() {
     let f64 = Type::Simple(Simple::Float(Float::new_f64(f64::MAX)));
     let my_type = Type::Simple(Simple::UserDefinedType(UserIdentifier::new("std".to_string(), "str".to_string())));
     let ptr = Type::Complex(Complex::Pointer(Pointer::new(Simple::Void, 1)));
-    let sized_arr = Type::Complex(Complex::Array(Array::new(Simple::Character, 13)));
-    let unsized_arr = Type::Complex(Complex::Array(Array::new(Simple::Character, 0)));
+    let sized_arr = Type::Complex(Complex::Array(Array::new(Simple::Character, Some(13))));
+    let unsized_arr = Type::Complex(Complex::Array(Array::new(Simple::Character, None)));
     let str = Type::Simple(Simple::String);
     let char = Type::Simple(Simple::Character);
     let void = Type::Simple(Simple::Void);

@@ -269,11 +269,11 @@ impl std::fmt::Display for Pointer {
 #[derive(Debug, Clone, PartialEq)]
 pub struct Array {
     base_type: Simple,
-    size: u64,
+    size: Option<u64>,
 }
 
 impl Array {
-    pub fn new(base_type: Simple, size: u64) -> Self {
+    pub fn new(base_type: Simple, size: Option<u64>) -> Self {
         Self {
             base_type,
             size
@@ -286,17 +286,16 @@ impl Array {
     }
 
     #[inline]
-    pub fn size(&mut self) -> u64 {
+    pub fn size(&mut self) -> Option<u64> {
         self.size
     }
 }
 
 impl std::fmt::Display for Array {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        if self.size == 0 {
-            write!(f, "[?]{}", self.base_type)
-        } else {
-            write!(f, "[{}]{}", self.size, self.base_type)
+        match self.size {
+            Some(sz) => write!(f, "[{}]{}", sz, self.base_type),
+            None => write!(f, "[?]{}", self.base_type)
         }
     }
 }
