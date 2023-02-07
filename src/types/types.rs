@@ -36,39 +36,39 @@ pub enum Type {
 }
 
 impl Type {
-    pub fn is_pointer(&mut self) -> bool {
+    pub fn is_pointer(&self) -> bool {
         match self {
             Type::Complex(Complex::Array(_)) | Type::Complex(Complex::Pointer(_)) | Type::Simple(Simple::String) => true,
             _ => false,
         }
     }
 
-    pub fn is_integer(&mut self) -> bool {
+    pub fn is_integer(&self) -> bool {
         match self {
             Type::Simple(Simple::Integer(_)) => true,
             _ => false,
         }
     }
 
-    pub fn is_float(&mut self) -> bool {
+    pub fn is_float(&self) -> bool {
         match self {
             Type::Simple(Simple::Float(_)) => true,
             _ => false,
         }
     }
 
-    pub fn is_numerical(&mut self) -> bool {
+    pub fn is_numerical(&self) -> bool {
         self.is_integer() || self.is_float()
     }
 
-    pub fn is_character(&mut self) -> bool {
+    pub fn is_character(&self) -> bool {
         match self {
             Type::Simple(Simple::Character) => true,
             _ => false,
         }
     }
 
-    pub fn simple(&mut self) -> &Simple {
+    pub fn simple(&self) -> &Simple {
         match self {
             Type::Simple(ty) => ty,
             Type::Complex(Complex::Array(arr)) => &arr.base_type,
@@ -221,7 +221,7 @@ impl std::fmt::Display for Float {
             32 => write!(f, "f32"),
             64 => write!(f, "f64"),
 
-            _ => write!(f, "floats cannot have any size other than 32 or 64 so this is pointless lol"),
+            _ => panic!("floats cannot have any size other than 32 or 64 so this is pointless lol"),
         }
     }
 }
@@ -250,7 +250,7 @@ pub struct Pointer {
 impl Pointer {
     pub fn new(base_type: Simple, size: u8) -> Self {
         if size > 2 {
-            println!("ERROR : pointer cannot be more than `**` long.")
+            panic!("ERROR : pointer cannot be more than `**` long.")
         }
 
         Self {
