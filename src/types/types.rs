@@ -1,5 +1,3 @@
-use either::*;
-
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct UserIdentifier {
     file: String,
