@@ -2,24 +2,24 @@ use either::*;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct UserIdentifier {
-    file: &'static str,
-    name: &'static str
+    file: String,
+    name: String
 }
 
 impl UserIdentifier {
     pub fn new(file: &'static str, name: &'static str) -> Self {
         Self {
-            file,
-            name
+            file: file.to_owned(),
+            name: name.to_owned(),
         }
     }
 
-    pub fn file(&mut self) -> String {
-        self.file.to_owned()
+    pub fn file(&mut self) -> &String {
+        &self.file
     }
 
-    pub fn name(&mut self) -> String {
-        self.name.to_owned()
+    pub fn name(&mut self) -> &String {
+        &self.name
     }
 }
 
@@ -73,6 +73,7 @@ impl Type {
             Type::Simple(ty) => ty,
             Type::Complex(Complex::Array(arr)) => &arr.base_type,
             Type::Complex(Complex::Pointer(ptr)) => &ptr.base_type,
+            Type::Complex(Complex::Ref(_ref)) => &_ref.base_type,
         }
     }
 
@@ -229,6 +230,7 @@ impl std::fmt::Display for Float {
 #[derive(Debug, Clone, PartialEq)]
 pub enum Complex {
     Pointer(Pointer),
+    Ref(Ref),
     Array(Array),
 }
 
@@ -236,6 +238,7 @@ impl std::fmt::Display for Complex {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         match self {
             Self::Pointer(ptr) => write!(f, "{}", ptr),
+            Self::Ref(_ref) => write!(f, "{}", _ref),
             Self::Array(arr) => write!(f, "{}", arr),
         }
     }
@@ -263,6 +266,31 @@ impl Pointer {
 impl std::fmt::Display for Pointer {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         write!(f, "{}{}", "*".repeat(self.size.into()), self.base_type)
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct Ref {
+    base_type: Simple,
+    size: u8,
+}
+
+impl Ref {
+    pub fn new(base_type: Simple, size: u8) -> Self {
+        if size > 2 {
+            panic!("ERROR : ref cannot be more than `&&` long.");
+        }
+
+        Self {
+            base_type,
+            size,
+        }
+    }
+}
+
+impl std::fmt::Display for Ref {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "{}{}", "&".repeat(self.size.into()), self.base_type)
     }
 }
 

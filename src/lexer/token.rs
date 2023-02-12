@@ -3,15 +3,15 @@
  * Newton (C) 2023
  */
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct Token {
-    lexeme: &'static str,
+    lexeme: String,
     token_type: TokenType,
     location: (u8, u8)
 }
 
 impl Token {
-    pub fn new(&self, lexeme: &'static str, token_type: TokenType, location: (u8, u8)) -> Self {
+    pub fn new(&self, lexeme: String, token_type: TokenType, location: (u8, u8)) -> Self {
         Self {
             lexeme,
             token_type,
@@ -19,7 +19,7 @@ impl Token {
         }
     }
 
-    pub fn from(&self, lexeme: &'static str, token_type: TokenType) -> Self {
+    pub fn from(&self, lexeme: String, token_type: TokenType) -> Self {
         Self {
             lexeme,
             token_type,
@@ -43,7 +43,13 @@ impl Token {
     }
 }
 
-#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
+impl std::fmt::Display for Token {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "{}", self.lexeme)
+    }
+}
+
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub enum TokenType {
     Eof = -1,
     Newline = 0,

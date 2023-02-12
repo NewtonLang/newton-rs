@@ -1,17 +1,22 @@
 use newton_rs::ast::ast::*;
 use newton_rs::types::types::*;
-use newton_rs::codegen::codegen::*;
 
 fn main() {
-    let mut signature = std::collections::BTreeMap::new();
-    signature.insert("argc", FieldOrArgument::new("argc", Type::Simple(Simple::Integer(Integer::new_signed_int(32, 0)))));
-    signature.insert("argv", FieldOrArgument::new("argv", Type::Complex(Complex::Array(Array::new(Simple::String, None)))));
+    let mut fields = std::collections::BTreeMap::new();
+    fields.insert("x", FieldOrArgument::new("x", Type::Simple(Simple::Float(Float::new_f64(f64::MAX)))));
+    fields.insert("y", FieldOrArgument::new("y", Type::Simple(Simple::Float(Float::new_f64(f64::MAX)))));
+    fields.insert("z", FieldOrArgument::new("z", Type::Simple(Simple::Float(Float::new_f64(f64::MAX)))));
 
-    // Testing Newton's rather primitive error handling. Switch `correct_signature` for `incorrect_signature` and *hopefully* you'll see a panic in the console.
-    let main_function = Function::new("main", signature.clone(), Type::Simple(Simple::Integer(Integer::new_signed_int(32, 0))), vec![]);
+    let mut methods = std::collections::BTreeMap::new();
+    
+    let mut common_args = std::collections::BTreeMap::new();
+    common_args.insert("self", FieldOrArgument::new("self", Type::Complex(Complex::Ref(Ref::new(Simple::UserDefinedType(UserIdentifier::new("Vec3", "Vec3")), 1)))));
 
-    let mut codegen_writer = CodegenWriter::new();
-    codegen_writer.generate_main_function(&main_function);
+    methods.insert("get_x", Function::new("get_x", common_args.clone(), Type::Simple(Simple::Float(Float::new_f64(f64::MAX))), vec![]));
+    methods.insert("get_y", Function::new("get_y", common_args.clone(), Type::Simple(Simple::Float(Float::new_f64(f64::MAX))), vec![]));
+    methods.insert("get_z", Function::new("get_z", common_args.clone(), Type::Simple(Simple::Float(Float::new_f64(f64::MAX))), vec![]));
 
-    println!("{}", codegen_writer.output());
+    let strct = Struct::new("Vec3", false, std::collections::BTreeSet::new(), fields, methods);
+
+    println!("{}", strct);
 }
