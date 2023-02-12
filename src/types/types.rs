@@ -138,23 +138,20 @@ impl std::fmt::Display for Simple {
 pub struct Integer {
     size: u8,
     signed: bool,
-    value: Either<i64, u64>,
 }
 
 impl Integer {
-    pub fn new_signed_int(size: u8, value: i64) -> Self {
+    pub fn new_signed_int(size: u8) -> Self {
         Self {
             size,
             signed: true,
-            value: Left(value)
         }
     }
 
-    pub fn new_unsigned_int(size: u8, value: u64) -> Self {
+    pub fn new_unsigned_int(size: u8) -> Self {
         Self {
             size,
             signed: false,
-            value: Right(value)
         }
     }
 
@@ -166,11 +163,6 @@ impl Integer {
     #[inline]
     pub fn signed(&mut self) -> bool {
         self.signed
-    }
-
-    #[inline]
-    pub fn value(&mut self) -> Either<i64, u64> {
-        self.value
     }
 }
 
@@ -186,33 +178,25 @@ impl std::fmt::Display for Integer {
 
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub struct Float {
-    size: u8,
-    value: Either<f32, f64>,
+    size: u8
 }
 
 impl Float {
-    pub fn new_f32(value: f32) -> Self {
+    pub fn new_f32() -> Self {
         Self {
             size: 32,
-            value: Left(value),
         }
     }
 
-    pub fn new_f64(value: f64) -> Self {
+    pub fn new_f64() -> Self {
         Self {
             size: 64,
-            value: Right(value),
         }
     }
 
     #[inline]
     pub fn size(&mut self) -> u8 {
         self.size
-    }
-
-    #[inline]
-    pub fn value(&mut self) -> Either<f32, f64> {
-        self.value
     }
 }
 
