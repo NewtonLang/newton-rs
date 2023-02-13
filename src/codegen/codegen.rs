@@ -3,8 +3,6 @@
  * Newton (C) 2023
  */
 
-use crate::ast::ast::*;
-
 #[derive(Debug, Clone)]
 pub struct CodegenWriter {
     output: String,
@@ -19,33 +17,6 @@ impl CodegenWriter {
 
     pub fn emit(&mut self, code: &String) -> () {
         self.output.push_str(code);
-    }
-
-    pub fn generate_struct(&mut self) -> () {
-        self.emit(&format!("typedef struct {{\n"));
-
-        self.emit(&format!("}};\n"));
-    }
-
-    pub fn generate_enum(&mut self) -> () {}
-
-    pub fn generate_function(&mut self, function: &Function) -> () {
-        self.emit(&format!("// {}\n", function));
-        self.emit(&format!("{} {}(", function.return_type(), function.name()));
-
-        self.emit(&format!(") {{\n"));
-
-        self.emit(&format!("}}\n"));
-    }
-
-    pub fn generate_main_function(&mut self, main_function: &Function) -> () {
-        self.emit(&format!("int main(int argc, char **argv) {{\n"));
-
-        for _statement in main_function.body() {
-            self.emit(&format!("TODO"));
-        }
-
-        self.emit(&format!("}}\n"));
     }
 
     pub fn generate_header(&mut self) -> () {

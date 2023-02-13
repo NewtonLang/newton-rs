@@ -1,7 +1,7 @@
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 pub struct Span {
-    start: usize,
-    end: usize,
+    pub start: usize,
+    pub end: usize,
 }
 
 impl Span {
@@ -11,22 +11,12 @@ impl Span {
             end,
         }
     }
-
-    #[inline]
-    pub fn start(&self) -> usize {
-        self.start
-    }
-
-    #[inline]
-    pub fn end(&self) -> usize {
-        self.end
-    }
 }
 
 #[derive(Debug)]
 pub struct Spanned<T> {
-    span: Span,
-    node: T
+    pub span: Span,
+    pub node: T
 }
 
 impl<T> Spanned<T> {
@@ -45,16 +35,6 @@ impl<T> Spanned<T> {
             span,
             node,
         }
-    }
-
-    #[inline]
-    pub fn span(&self) -> Span {
-        self.span
-    }
-
-    #[inline]
-    pub fn node(&self) -> &T {
-        &self.node
     }
 }
 

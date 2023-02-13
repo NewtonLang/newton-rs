@@ -2,7 +2,6 @@ use crate::types::types::*;
 use crate::parser::span::*;
 use crate::lexer::token::*;
 use crate::parser::error::*;
-use crate::semantic::error::*;
 
 #[derive(Debug, PartialEq)]
 pub enum ExpressionKind {
@@ -88,7 +87,7 @@ impl Expression {
     }
 
     pub fn sub_expressions(&mut self) -> Vec<&Spanned<Expression>> {
-        match self.kind {
+        match self.kind() {
             ExpressionKind::Error(_) => panic!(),
             ExpressionKind::NullLiteral | ExpressionKind::DecLiteral(_) | ExpressionKind::FloatLiteral(_) | ExpressionKind::StringLiteral(_) | ExpressionKind::Char(_) | ExpressionKind::SizeOf(_) | ExpressionKind::Identifier(_) => vec![],
             ExpressionKind::New(expr) | ExpressionKind::Negate(_, expr) | ExpressionKind::BoolNegate(_, expr) | ExpressionKind::Reference(_, expr) | ExpressionKind::Dereference(_, expr) => vec![ &expr ],
@@ -99,7 +98,7 @@ impl Expression {
             ExpressionKind::Assignment { left, value, .. } => vec![ &left, &value ],
 
             ExpressionKind::Call { arguments, callee, .. } => {
-                if let ExpressionKind::Identifier(_) = callee.node().kind() {
+                if let ExpressionKind::Identifier(_) = callee.node.kind {
                     arguments.0.iter().collect()
                 } else {
                     let mut vec = Vec::with_capacity(arguments.0.len() + 1);
@@ -135,28 +134,28 @@ impl Expression {
 
 impl PartialEq for Expression {
     fn eq(&self, other: &Self) -> bool {
-        self.kind().eq(other.kind())
+        self.kind.eq(&other.kind)
     }
 }
 
 impl std::fmt::Display for Expression {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        match self.kind {
+        match &self.kind {
             ExpressionKind::Error(err) => write!(f, "{err}"),
             ExpressionKind::NullLiteral => write!(f, "null"),
             ExpressionKind::DecLiteral(lit) | ExpressionKind::FloatLiteral(lit) | ExpressionKind::StringLiteral(lit) | ExpressionKind::Char(lit) => write!(f, "{lit}"),
             ExpressionKind::SizeOf(ty) => write!(f, "sizeof({ty})"),
-            ExpressionKind::New(expr) => write!(f, "new {}", expr.node()),
-            ExpressionKind::Negate(_, expr) | ExpressionKind::BoolNegate(_, expr) => write!(f, "-{}", expr.node()),
-            ExpressionKind::Reference(_, expr) => write!(f, "&{}", expr.node()),
-            ExpressionKind::Dereference(_, expr) => write!(f, "*{}", expr.node()),
-            ExpressionKind::Binary(l, op, r) | ExpressionKind::BoolBinary(l, op, r) => write!(f, "{} {} {}", l.node(), op.node(), r.node()),
+            ExpressionKind::New(expr) => write!(f, "new {}", expr.node),
+            ExpressionKind::Negate(_, expr) | ExpressionKind::BoolNegate(_, expr) => write!(f, "-{}", expr.node),
+            ExpressionKind::Reference(_, expr) => write!(f, "&{}", expr.node),
+            ExpressionKind::Dereference(_, expr) => write!(f, "*{}", expr.node),
+            ExpressionKind::Binary(l, op, r) | ExpressionKind::BoolBinary(l, op, r) => write!(f, "{} {} {}", l.node, op.node, r.node),
             ExpressionKind::Identifier(name) => write!(f, "{name}"),
-            ExpressionKind::Cast(expr, _, ty) => write!(f, "{} as {}", expr.node(), ty.node()),
-            ExpressionKind::Assignment { left, value, .. } => write!(f, "{} = {}", left.node(), value.node()),
-            ExpressionKind::Call { callee, arguments, .. } => write!(f, "{}({})", callee.node(), arguments),
-            ExpressionKind::Access { left, identifier } => write!(f, "{}.{}", left.node(), identifier.node()),
-            ExpressionKind::StructInitialization { identifier, fields } => write!(f, "{} {{ {} }}", identifier.node(), fields.0.iter().map(| (n, e) | format!("{}: {}", n.node(), e.node())).collect::<Vec<String>>().join(",\n"))
+            ExpressionKind::Cast(expr, _, ty) => write!(f, "{} as {}", expr.node, ty.node),
+            ExpressionKind::Assignment { left, value, .. } => write!(f, "{} = {}", left.node, value.node),
+            ExpressionKind::Call { callee, arguments, .. } => write!(f, "{}({})", callee.node, arguments),
+            ExpressionKind::Access { left, identifier } => write!(f, "{}.{}", left.node, identifier.node),
+            ExpressionKind::StructInitialization { identifier, fields } => write!(f, "{} {{ {} }}", identifier.node, fields.0.iter().map(| (n, e) | format!("{}: {}", n.node, e.node)).collect::<Vec<String>>().join(",\n"))
         }
     }
 }

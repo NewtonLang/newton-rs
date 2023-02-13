@@ -23,7 +23,7 @@ impl Source {
     }
 
     pub fn slice(&self, span: Span) -> &str {
-        &self.code[span.start() ..= span.end()]
+        &self.code[ span.start ..= span.end ]
     }
 
     #[inline]
