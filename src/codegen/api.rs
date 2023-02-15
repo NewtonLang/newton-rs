@@ -8,20 +8,33 @@
  */
 
 /*
+ * Just an empty trait that the backend needs to implement.
+ */
+
+pub trait Backend {}
+
+/*
  * `BackendInfo` trait. Any new backend needs to derive this trait, and provide the necessary fields for the trait to work properly.
  */
 pub trait BackendInfo {
     // Return the name for the backend.
-    fn backend_name(&mut self) -> &String;
+    fn backend_name(&self) -> &String;
 
     // Return the description for the backend. This is up to the author(s) of the backend.
-    fn backend_description(&mut self) -> &String;
+    fn backend_description(&self) -> &String;
 
     // The name(s) of the author(s).
-    fn backend_author(&mut self) -> &String;
+    fn backend_author(&self) -> &String;
 
     // The target of the backend. Could be C, could be some IR, could be JavaScript (if you're a maniac).
-    fn backend_target(&mut self) -> &String;
+    fn backend_target(&self) -> &String;
+}
+
+// `Display` is already implemented for `BackendInfo`, providing a default pretty-printed message for the backend.
+impl std::fmt::Display for dyn BackendInfo {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "{} by {} ({})\n{}", self.backend_name(), self.backend_author(), self.backend_target(), self.backend_description())
+    }
 }
 
 /*
@@ -42,25 +55,26 @@ pub trait BackendMethods {
  * there's any changes to the backend API.
  */
 
-pub struct Backend<T: BackendMethods> {
-    pub backends: std::collections::HashMap<String, T>,
+/// The new backend must satisfy the `BackendInfo` and `BackendMethods` bounds. These are explicitly required to properly register the new backend.
+/// A new backend must also implement the `Backend` trait, otherwise the HashMap will not accept the target.
+pub struct BackendAPI {
+    pub backends: std::sync::Mutex<std::collections::HashMap<String, std::rc::Rc<dyn Backend>>>,
 }
 
-impl<T: BackendMethods> Backend<T> {
+impl BackendAPI {
     pub fn new() -> Self {
-        Self {
-            backends: std::collections::HashMap::new(),
+        Self { 
+            backends: std::sync::Mutex::new(std::collections::HashMap::new()),
         }
     }
 
-    pub fn register_backend(&mut self, name: &'static str, backend: T) -> () {
-        self.backends.insert(name.to_owned(), backend);
+    // Register the new backend, and push it to a HashMap.
+    pub fn register(&mut self, name: &'static str, backend: std::rc::Rc<dyn Backend>) -> () {
+        self.backends.lock().unwrap().insert(name.to_owned(), backend);
     }
 
-    pub fn get_backend(&mut self, name: &'static str) -> &T {
-        match self.backends.get(&name.to_owned()) {
-            Some(v) => v,
-            None => panic!("could not find backend `{}`", name),
-        }
+    // Retrieve a specific backend by name.
+    pub fn get(&mut self, name: &'static str) -> std::rc::Rc<dyn Backend> {
+        self.backends.lock().unwrap().get(name).unwrap().clone()
     }
 }

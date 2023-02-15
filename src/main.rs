@@ -1,10 +1,9 @@
-use newton_rs::codegen::*;
+use newton_rs::codegen::api::*;
+use newton_rs::codegen::backends::*;
 
 fn main() {
-    let c_backend = backends::c::C::new();
+    let c_backend = c::C::new();
 
-    let mut c_target: api::Backend<backends::c::C> = api::Backend::new();
-    c_target.register_backend("C", c_backend);
-
-    c_target.get_backend("C");
+    let mut c_target: BackendAPI = BackendAPI::new();
+    c_target.register("C", std::rc::Rc::new(c_backend));
 }

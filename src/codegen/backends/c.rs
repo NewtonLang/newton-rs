@@ -32,20 +32,22 @@ impl C {
     }
 }
 
+impl Backend for C {}
+
 impl BackendInfo for C {
-    fn backend_name(&mut self) -> &String {
+    fn backend_name(&self) -> &String {
         &self.name
     }
 
-    fn backend_description(&mut self) -> &String {
+    fn backend_description(&self) -> &String {
         &self.description
     }
 
-    fn backend_author(&mut self) -> &String {
+    fn backend_author(&self) -> &String {
         &self.author
     }
 
-    fn backend_target(&mut self) -> &String {
+    fn backend_target(&self) -> &String {
         &self.target
     }
 }
