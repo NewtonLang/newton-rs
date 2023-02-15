@@ -8,15 +8,10 @@
  */
 
 /*
- * Just an empty trait that the backend needs to implement.
+ * `Backend` trait. Every new backend must implement this trait and its associated methods.
  */
 
-pub trait Backend {}
-
-/*
- * `BackendInfo` trait. Any new backend needs to derive this trait, and provide the necessary fields for the trait to work properly.
- */
-pub trait BackendInfo {
+pub trait Backend {
     // Return the name for the backend.
     fn backend_name(&self) -> &String;
 
@@ -28,25 +23,19 @@ pub trait BackendInfo {
 
     // The target of the backend. Could be C, could be some IR, could be JavaScript (if you're a maniac).
     fn backend_target(&self) -> &String;
-}
 
-// `Display` is already implemented for `BackendInfo`, providing a default pretty-printed message for the backend.
-impl std::fmt::Display for dyn BackendInfo {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "{} by {} ({})\n{}", self.backend_name(), self.backend_author(), self.backend_target(), self.backend_description())
-    }
-}
-
-/*
- * `BackendMethods` trait. Any new backend needs to implement this trait and add all the methods in here, which just serve as a base
- * to provide the methods needed for any new backend to arbitrarily generate code for the new backend.
- */
-pub trait BackendMethods {
     // The emit method. Supposedly, it should feed generated source code to a `source` field on the backend's struct.
     fn emit(&mut self, code: &'static str) -> ();
 
     // Arbitrary header. Could be info about the backend, could be anything else the author wants.
     fn generate_header(&mut self) -> ();
+}
+
+// `Display` is already implemented for `BackendInfo`, providing a default pretty-printed message for the backend.
+impl std::fmt::Display for dyn Backend {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "{} by {} ({})\n{}", self.backend_name(), self.backend_author(), self.backend_target(), self.backend_description())
+    }
 }
 
 /*

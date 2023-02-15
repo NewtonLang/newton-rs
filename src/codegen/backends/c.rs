@@ -32,9 +32,7 @@ impl C {
     }
 }
 
-impl Backend for C {}
-
-impl BackendInfo for C {
+impl Backend for C {
     fn backend_name(&self) -> &String {
         &self.name
     }
@@ -50,9 +48,7 @@ impl BackendInfo for C {
     fn backend_target(&self) -> &String {
         &self.target
     }
-}
 
-impl BackendMethods for C {
     fn emit(&mut self, code: &'static str) -> () {
         self.source.push_str(&code.to_owned());
     }

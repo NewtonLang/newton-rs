@@ -4,6 +4,6 @@ use newton_rs::codegen::backends::*;
 fn main() {
     let c_backend = c::C::new();
 
-    let mut c_target: BackendAPI = BackendAPI::new();
-    c_target.register("C", std::rc::Rc::new(c_backend));
+    let mut backends: BackendAPI = BackendAPI::new();
+    backends.register("C", std::rc::Rc::new(c_backend));
 }
