@@ -10,7 +10,7 @@ use super::super::api::*;
 
 #[derive(Debug)]
 pub struct C {
-    // Fields needed to provide `BackendInfo` all the information about the new backend.
+    // Fields needed to provide `Backend` all the information about the new backend.
     pub name: String,
     pub description: String,
     pub author: String,
@@ -49,7 +49,11 @@ impl Backend for C {
         &self.target
     }
 
-    fn emit(&mut self, code: &'static str) -> () {
+    fn source(&self) -> &String {
+        &self.source
+    }
+
+    fn emit(&mut self, code: &str) -> () {
         self.source.push_str(&code.to_owned());
     }
     

@@ -24,8 +24,11 @@ pub trait Backend {
     // The target of the backend. Could be C, could be some IR, could be JavaScript (if you're a maniac).
     fn backend_target(&self) -> &String;
 
+    // Return the source stream of the backend.
+    fn source(&self) -> &String;
+
     // The emit method. Supposedly, it should feed generated source code to a `source` field on the backend's struct.
-    fn emit(&mut self, code: &'static str) -> ();
+    fn emit(&mut self, code: &str) -> ();
 
     // Arbitrary header. Could be info about the backend, could be anything else the author wants.
     fn generate_header(&mut self) -> ();
@@ -42,12 +45,12 @@ impl std::fmt::Display for dyn Backend {
  * This struct is where all the magic happens. You simply `::register()` the new backend, and in *theory* it should all work just fine.
  * Subject to change; if you are the maintainer of a backend, make sure to always check this file with every Newton update to see if
  * there's any changes to the backend API.
+ * 
+ * Any new backend must implement the aptly named `Backend` trait that provides the base functionality for the newly added target.
  */
 
-/// The new backend must satisfy the `BackendInfo` and `BackendMethods` bounds. These are explicitly required to properly register the new backend.
-/// A new backend must also implement the `Backend` trait, otherwise the HashMap will not accept the target.
 pub struct BackendAPI {
-    pub backends: std::sync::Mutex<std::collections::HashMap<String, std::rc::Rc<dyn Backend>>>,
+    pub backends: std::sync::Mutex<std::collections::HashMap<String, std::rc::Rc<std::cell::RefCell<dyn Backend>>>>,
 }
 
 impl BackendAPI {
@@ -58,12 +61,13 @@ impl BackendAPI {
     }
 
     // Register the new backend, and push it to a HashMap.
-    pub fn register(&mut self, name: &'static str, backend: std::rc::Rc<dyn Backend>) -> () {
+    pub fn register(&mut self, name: &'static str, backend: std::rc::Rc<std::cell::RefCell<dyn Backend>>) -> () {
         self.backends.lock().unwrap().insert(name.to_owned(), backend);
     }
 
     // Retrieve a specific backend by name.
-    pub fn get(&mut self, name: &'static str) -> std::rc::Rc<dyn Backend> {
+    // You need to get a reference to the returned value to be able to use the methods that belong to the backend.
+    pub fn get(&mut self, name: &'static str) -> std::rc::Rc<std::cell::RefCell<dyn Backend>> {
         self.backends.lock().unwrap().get(name).unwrap().clone()
     }
 }

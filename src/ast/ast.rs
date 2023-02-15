@@ -59,6 +59,13 @@ impl Expression {
         }
     }
 
+    pub fn new_with_ty(ty: Type, kind: ExpressionKind) -> Self {
+        Self {
+            ty: std::cell::RefCell::new(Some(ty)),
+            kind,
+        }
+    }
+
     pub fn is_error(&mut self) -> bool {
         if let ExpressionKind::Error(..) = self.kind {
             return true;
@@ -212,6 +219,45 @@ pub enum TopLevel {
 
     Error {
         error: Spanned<ParseError>,
+    }
+}
+
+impl std::fmt::Display for TopLevel {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        match self {
+            Self::FunctionDeclaration { 
+                name, 
+                arguments, 
+                body: _, 
+                return_type, 
+                is_external } => {
+                    let mut external = String::new();
+
+                    if *is_external {
+                        external.push_str("extern");
+                    }
+
+                    let name = format!("{}", name.node);
+                    let return_type = format!("{}", return_type.node);
+                    let mut args = Vec::new();
+
+                    for argument in &arguments.0 {
+                        args.push(format!("{}", argument.node));
+                    }
+
+                    let mut signature = String::new();
+
+                    if *is_external {
+                        signature.push_str(&format!("extern {} {}({});\n", return_type, name, args.join(", ")));
+                    } else {
+                        signature.push_str(&format!("{} {} ({}) {{\n", return_type, name, args.join(", ")));
+                    }
+
+                    write!(f, "{}", signature)
+                },
+
+            _ => panic!(),
+        }
     }
 }
 
