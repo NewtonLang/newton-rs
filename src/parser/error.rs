@@ -1,19 +1,19 @@
 use crate::lexer::token::*;
 
 #[derive(Debug, PartialEq, Eq, Clone)]
-pub enum ParseError {
-    LexingError(LexingError),
-    PrefixError(String),
-    InfixError(String),
-    InternalError(&'static str),
+pub enum ParseError<'a> {
+    LexingError(LexingError<'a>),
+    PrefixError(&'a str),
+    InfixError(&'a str),
+    InternalError(&'a str),
 
     ConsumeError {
-        actual: Token,
-        expected: String,
+        actual: TokenType<'a>,
+        expected: &'a str,
     },
 }
 
-impl std::fmt::Display for ParseError {
+impl<'a> std::fmt::Display for ParseError<'a> {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         match self {
             Self::LexingError(err) => write!(f, "{}", err.as_string()),
@@ -25,21 +25,21 @@ impl std::fmt::Display for ParseError {
     }
 }
 
-impl From<LexingError> for ParseError {
-    fn from(value: LexingError) -> Self {
+impl<'a> From<LexingError<'a>> for ParseError<'a> {
+    fn from(value: LexingError<'a>) -> Self {
         ParseError::LexingError(value)
     }
 }
 
 #[derive(Default, PartialEq, Eq, Clone, Hash)]
-pub struct LexingError {
-    cause: Option<String>,
+pub struct LexingError<'a> {
+    cause: Option<&'a str>,
 }
 
-impl LexingError {
+impl<'a> LexingError<'a> {
     pub fn with_cause(cause: &'static str) -> Self {
         Self {
-            cause: Some(cause.to_owned()),
+            cause: Some(cause),
         }
     }
 
@@ -54,16 +54,16 @@ impl LexingError {
     }
 }
 
-impl std::fmt::Debug for LexingError {
+impl<'a> std::fmt::Debug for LexingError<'a> {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         write!(f, "{}", self)
     }
 }
 
-impl std::fmt::Display for LexingError {
+impl<'a> std::fmt::Display for LexingError<'a> {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         write!(f, "{}", self.as_string())
     }
 }
 
-impl std::error::Error for LexingError {}
+impl<'a> std::error::Error for LexingError<'a> {}

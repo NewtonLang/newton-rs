@@ -4,62 +4,62 @@ use crate::lexer::token::*;
 use crate::parser::error::*;
 
 #[derive(Debug, PartialEq)]
-pub enum ExpressionKind {
-    Error(ParseError),
+pub enum ExpressionKind<'a> {
+    Error(ParseError<'a>),
     NullLiteral,
     DecLiteral(&'static str),
     FloatLiteral(&'static str),
     StringLiteral(&'static str),
     Char(&'static str),
-    Reference(Spanned<Token>, Box<Spanned<Expression>>),
-    Dereference(Spanned<Token>, Box<Spanned<Expression>>),
-    Negate(Spanned<Token>, Box<Spanned<Expression>>),
-    BoolNegate(Spanned<Token>, Box<Spanned<Expression>>),
-    Binary(Box<Spanned<Expression>>, Spanned<Token>, Box<Spanned<Expression>>),
-    BoolBinary(Box<Spanned<Expression>>, Spanned<Token>, Box<Spanned<Expression>>),
-    Cast(Box<Spanned<Expression>>, Spanned<Token>, Spanned<Type>),
+    Reference(Spanned<TokenType<'a>>, Box<Spanned<Expression<'a>>>),
+    Dereference(Spanned<TokenType<'a>>, Box<Spanned<Expression<'a>>>),
+    Negate(Spanned<TokenType<'a>>, Box<Spanned<Expression<'a>>>),
+    BoolNegate(Spanned<TokenType<'a>>, Box<Spanned<Expression<'a>>>),
+    Binary(Box<Spanned<Expression<'a>>>, Spanned<TokenType<'a>>, Box<Spanned<Expression<'a>>>),
+    BoolBinary(Box<Spanned<Expression<'a>>>, Spanned<TokenType<'a>>, Box<Spanned<Expression<'a>>>),
+    Cast(Box<Spanned<Expression<'a>>>, Spanned<TokenType<'a>>, Spanned<Type<'a>>),
     Identifier(&'static str),
-    New(Box<Spanned<Expression>>),
-    SizeOf(Type),
+    New(Box<Spanned<Expression<'a>>>),
+    SizeOf(Type<'a>),
 
     Assignment {
-        left: Box<Spanned<Expression>>,
-        eq: Spanned<Token>,
-        value: Box<Spanned<Expression>>,
+        left: Box<Spanned<Expression<'a>>>,
+        eq: Spanned<TokenType<'a>>,
+        value: Box<Spanned<Expression<'a>>>,
     },
 
     Call {
         module: &'static str,
-        callee: Box<Spanned<Expression>>,
-        arguments: ArgumentList,
+        callee: Box<Spanned<Expression<'a>>>,
+        arguments: ArgumentList<'a>,
     },
 
     Access {
-        left: Box<Spanned<Expression>>,
+        left: Box<Spanned<Expression<'a>>>,
         identifier: Spanned<&'static str>,
     },
 
     StructInitialization {
-        identifier: Spanned<UserIdentifier>,
-        fields: InitializerList,
+        identifier: Spanned<UserIdentifier<'a>>,
+        fields: InitializerList<'a>,
     },
 }
 
 #[derive(Debug)]
-pub struct Expression {
-    ty: std::cell::RefCell<Option<Type>>,
-    kind: ExpressionKind,
+pub struct Expression<'a> {
+    ty: std::cell::RefCell<Option<Type<'a>>>,
+    kind: ExpressionKind<'a>,
 }
 
-impl Expression {
-    pub fn new(kind: ExpressionKind) -> Self {
+impl<'a> Expression<'a> {
+    pub fn new(kind: ExpressionKind<'a>) -> Self {
         Self {
             ty: std::cell::RefCell::new(None),
             kind,
         }
     }
 
-    pub fn new_with_ty(ty: Type, kind: ExpressionKind) -> Self {
+    pub fn new_with_ty(ty: Type<'a>, kind: ExpressionKind<'a>) -> Self {
         Self {
             ty: std::cell::RefCell::new(Some(ty)),
             kind,
@@ -85,15 +85,15 @@ impl Expression {
     }
 
     #[inline]
-    pub fn kind(&mut self) -> &ExpressionKind {
+    pub fn kind(&mut self) -> &ExpressionKind<'a> {
         &self.kind
     }
 
-    pub fn set_ty(&mut self, ty: Type) {
+    pub fn set_ty(&mut self, ty: Type<'a>) {
         self.ty.replace(Some(ty));
     }
 
-    pub fn sub_expressions(&mut self) -> Vec<&Spanned<Expression>> {
+    pub fn sub_expressions(&mut self) -> Vec<&Spanned<Expression<'a>>> {
         match self.kind() {
             ExpressionKind::Error(_) => panic!(),
             ExpressionKind::NullLiteral | ExpressionKind::DecLiteral(_) | ExpressionKind::FloatLiteral(_) | ExpressionKind::StringLiteral(_) | ExpressionKind::Char(_) | ExpressionKind::SizeOf(_) | ExpressionKind::Identifier(_) => vec![],
@@ -139,13 +139,13 @@ impl Expression {
     }
 }
 
-impl PartialEq for Expression {
+impl<'a> PartialEq for Expression<'a> {
     fn eq(&self, other: &Self) -> bool {
         self.kind.eq(&other.kind)
     }
 }
 
-impl std::fmt::Display for Expression {
+impl<'a> std::fmt::Display for Expression<'a> {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         match &self.kind {
             ExpressionKind::Error(err) => write!(f, "{err}"),
@@ -168,24 +168,24 @@ impl std::fmt::Display for Expression {
 }
 
 #[derive(Debug, PartialEq, Eq)]
-pub struct Program(Vec<TopLevel>);
+pub struct Program<'a> (Vec<TopLevel<'a>>);
 
 #[derive(Debug, PartialEq, Eq)]
-pub struct Block(pub Vec<Statement>);
+pub struct Block<'a> (pub Vec<Statement<'a>>);
 
 #[derive(Debug, PartialEq, Eq)]
-pub struct Parameter(pub Spanned<&'static str>, pub Spanned<Type>);
+pub struct Parameter<'a> (pub Spanned<&'a str>, pub Spanned<Type<'a>>);
 
-impl Parameter {
-    pub fn new(identifier: Spanned<&'static str>, ty: Spanned<Type>) -> Self {
+impl<'a> Parameter<'a> {
+    pub fn new(identifier: Spanned<&'a str>, ty: Spanned<Type<'a>>) -> Self {
         Parameter(identifier, ty)
     }
 }
 
 #[derive(Debug, PartialEq, Eq)]
-pub struct ArgumentList(pub Vec<Spanned<Expression>>);
+pub struct ArgumentList<'a> (pub Vec<Spanned<Expression<'a>>>);
 
-impl std::fmt::Display for ArgumentList {
+impl<'a> std::fmt::Display for ArgumentList<'a> {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         let strings: Vec<String> = self
             .0
@@ -197,15 +197,15 @@ impl std::fmt::Display for ArgumentList {
 }
 
 #[derive(Debug, PartialEq)]
-pub struct InitializerList(pub Vec<(Spanned<&'static str>, Spanned<Expression>)>);
+pub struct InitializerList<'a> (pub Vec<(Spanned<&'static str>, Spanned<Expression<'a>>)>);
 
 #[derive(Debug, PartialEq, Eq)]
-pub enum TopLevel {
+pub enum TopLevel<'a> {
     FunctionDeclaration {
-        name: Spanned<&'static str>,
-        arguments: ArgumentList,
-        body: Block,
-        return_type: Spanned<Type>,
+        name: Spanned<&'a str>,
+        arguments: ArgumentList<'a>,
+        body: Block<'a>,
+        return_type: Spanned<Type<'a>>,
         is_external: bool,
     },
 
@@ -214,15 +214,15 @@ pub enum TopLevel {
     },
 
     TypeDeclaration {
-        ty: TypeDeclaration,
+        ty: TypeDeclaration<'a>,
     },
 
     Error {
-        error: Spanned<ParseError>,
+        error: Spanned<ParseError<'a>>,
     }
 }
 
-impl std::fmt::Display for TopLevel {
+impl<'a> std::fmt::Display for TopLevel<'a> {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         match self {
             Self::FunctionDeclaration { 
@@ -262,46 +262,46 @@ impl std::fmt::Display for TopLevel {
 }
 
 #[derive(Debug, PartialEq, Eq)]
-pub enum TypeDeclaration {
+pub enum TypeDeclaration<'a> {
     StructDefinition {
         name: Spanned<&'static str>,
-        fields: Vec<(Spanned<&'static str>, Spanned<Type>)>,
+        fields: Vec<(Spanned<&'static str>, Spanned<Type<'a>>)>,
     }
 }
 
 #[derive(Debug, PartialEq, Eq)]
-pub enum Statement {
-    VariableDeclaration(Box<VariableDeclaration>),
-    IfStatement(Box<IfStatement>),
-    WhileStatement(Box<WhileStatement>),
-    ReturnStatement(Option<Spanned<Expression>>),
-    DeleteStatement(Box<Spanned<Expression>>),
-    ExpressionStatement(Spanned<Expression>),
+pub enum Statement<'a> {
+    VariableDeclaration(Box<VariableDeclaration<'a>>),
+    IfStatement(Box<IfStatement<'a>>),
+    WhileStatement(Box<WhileStatement<'a>>),
+    ReturnStatement(Option<Spanned<Expression<'a>>>),
+    DeleteStatement(Box<Spanned<Expression<'a>>>),
+    ExpressionStatement(Spanned<Expression<'a>>),
 }
 
 #[derive(Debug, PartialEq, Eq)]
-pub struct VariableDeclaration {
-    pub name: Spanned<&'static str>,
-    pub value: Spanned<Expression>,
-    pub eq: Spanned<Token>,
-    pub ty: std::cell::RefCell<Option<Spanned<Type>>>,
+pub struct VariableDeclaration<'a> {
+    pub name: Spanned<&'a str>,
+    pub value: Spanned<Expression<'a>>,
+    pub eq: Spanned<TokenType<'a>>,
+    pub ty: std::cell::RefCell<Option<Spanned<Type<'a>>>>,
 }
 
 #[derive(Debug, PartialEq, Eq)]
-pub struct IfStatement {
-    pub condition: Spanned<Expression>,
-    pub then_block: Block,
-    pub else_branch: Option<Box<Else>>,
+pub struct IfStatement<'a> {
+    pub condition: Spanned<Expression<'a>>,
+    pub then_block: Block<'a>,
+    pub else_branch: Option<Box<Else<'a>>>,
 }
 
 #[derive(Debug, PartialEq, Eq)]
-pub enum Else {
-    IfStatement(Box<Statement>),
-    Block(Block),
+pub enum Else<'a> {
+    IfStatement(Box<Statement<'a>>),
+    Block(Block<'a>),
 }
 
 #[derive(Debug, PartialEq, Eq)]
-pub struct WhileStatement {
-    pub condition: Spanned<Expression>,
-    pub body: Block,
+pub struct WhileStatement<'a> {
+    pub condition: Spanned<Expression<'a>>,
+    pub body: Block<'a>,
 }

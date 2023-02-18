@@ -1,39 +1,39 @@
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct UserIdentifier {
-    file: String,
-    name: String
+pub struct UserIdentifier<'a> {
+    file: &'a str,
+    name: &'a str,
 }
 
-impl UserIdentifier {
-    pub fn new(file: &'static str, name: &'static str) -> Self {
+impl<'a> UserIdentifier<'a> {
+    pub fn new(file: &'a str, name: &'a str) -> Self {
         Self {
-            file: file.to_owned(),
-            name: name.to_owned(),
+            file,
+            name,
         }
     }
 
-    pub fn file(&mut self) -> &String {
-        &self.file
+    pub fn file(&mut self) -> &'a str {
+        self.file
     }
 
-    pub fn name(&mut self) -> &String {
-        &self.name
+    pub fn name(&mut self) -> &'a str {
+        self.name
     }
 }
 
-impl std::fmt::Display for UserIdentifier {
+impl<'a> std::fmt::Display for UserIdentifier<'a> {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         write!(f, "{}.{}", self.file, self.name)
     }
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum Type {
-    Simple(Simple),
-    Complex(Complex),
+pub enum Type<'a> {
+    Simple(Simple<'a>),
+    Complex(Complex<'a>),
 }
 
-impl Type {
+impl<'a> Type<'a> {
     pub fn is_pointer(&self) -> bool {
         match self {
             Type::Complex(Complex::Array(_)) | Type::Complex(Complex::Pointer(_)) | Type::Simple(Simple::String) => true,
@@ -86,7 +86,7 @@ impl Type {
     }
 }
 
-impl std::fmt::Display for Type {
+impl<'a> std::fmt::Display for Type<'a> {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         match self {
             Type::Simple(ty) => write!(f, "{}", ty),
@@ -95,19 +95,19 @@ impl std::fmt::Display for Type {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
-pub enum Simple {
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum Simple<'a> {
     String,
     Integer(Integer),
     Float(Float),
     Character,
     Void,
     Bool,
-    UserDefinedType(UserIdentifier),
+    UserDefinedType(UserIdentifier<'a>),
     VarArgs,
 }
 
-impl Simple {
+impl<'a> Simple<'a> {
     pub fn arithmetic(&mut self) -> bool {
         match self {
             Simple::Integer(_) | Simple::Float(_) | Simple::Character => true,
@@ -116,7 +116,7 @@ impl Simple {
     }
 }
 
-impl std::fmt::Display for Simple {
+impl<'a> std::fmt::Display for Simple<'a> {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         match self {
             Self::String => write!(f, "string"),
@@ -174,7 +174,7 @@ impl std::fmt::Display for Integer {
     }
 }
 
-#[derive(Debug, Copy, Clone, PartialEq)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct Float {
     size: u8
 }
@@ -210,13 +210,13 @@ impl std::fmt::Display for Float {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum Complex {
-    Pointer(Pointer),
-    Ref(Ref),
-    Array(Array),
+pub enum Complex<'a> {
+    Pointer(Pointer<'a>),
+    Ref(Ref<'a>),
+    Array(Array<'a>),
 }
 
-impl std::fmt::Display for Complex {
+impl<'a> std::fmt::Display for Complex<'a> {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         match self {
             Self::Pointer(ptr) => write!(f, "{}", ptr),
@@ -227,13 +227,13 @@ impl std::fmt::Display for Complex {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct Pointer {
-    base_type: Simple,
+pub struct Pointer<'a> {
+    base_type: Simple<'a>,
     size: u8,
 }
 
-impl Pointer {
-    pub fn new(base_type: Simple, size: u8) -> Self {
+impl<'a> Pointer<'a> {
+    pub fn new(base_type: Simple<'a>, size: u8) -> Self {
         if size > 2 {
             panic!("ERROR : pointer cannot be more than `**` long.")
         }
@@ -245,20 +245,20 @@ impl Pointer {
     }
 }
 
-impl std::fmt::Display for Pointer {
+impl<'a> std::fmt::Display for Pointer<'a> {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         write!(f, "{}{}", "*".repeat(self.size.into()), self.base_type)
     }
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct Ref {
-    base_type: Simple,
+pub struct Ref<'a> {
+    base_type: Simple<'a>,
     size: u8,
 }
 
-impl Ref {
-    pub fn new(base_type: Simple, size: u8) -> Self {
+impl<'a> Ref<'a> {
+    pub fn new(base_type: Simple<'a>, size: u8) -> Self {
         if size > 2 {
             panic!("ERROR : ref cannot be more than `&&` long.");
         }
@@ -270,20 +270,20 @@ impl Ref {
     }
 }
 
-impl std::fmt::Display for Ref {
+impl<'a> std::fmt::Display for Ref<'a> {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         write!(f, "{}{}", "&".repeat(self.size.into()), self.base_type)
     }
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct Array {
-    base_type: Simple,
+pub struct Array<'a> {
+    base_type: Simple<'a>,
     size: Option<u64>,
 }
 
-impl Array {
-    pub fn new(base_type: Simple, size: Option<u64>) -> Self {
+impl<'a> Array<'a> {
+    pub fn new(base_type: Simple<'a>, size: Option<u64>) -> Self {
         Self {
             base_type,
             size
@@ -301,7 +301,7 @@ impl Array {
     }
 }
 
-impl std::fmt::Display for Array {
+impl<'a> std::fmt::Display for Array<'a> {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         match self.size {
             Some(sz) => write!(f, "[{}]{}", sz, self.base_type),
