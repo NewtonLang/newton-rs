@@ -5,9 +5,7 @@ use newton_rs::parser::span::*;
 
 fn main() {
     let source = Source::new("main", "
-    fn main(argc: i32, argv: []string) => i32 {
-        return 1;
-    }
+    type Nullable<T> = T?;
     ");
 
     let lexer = Lexer::new(&source);

@@ -268,7 +268,7 @@ impl<'a> Lexer<'a> {
                     (_, '=') => TokenType::EqualsEquals,
                     (_, '>') => TokenType::Arrow,
 
-                    _ => panic!(),
+                    (_, _) => TokenType::Equals,
                 };
 
                 self.advance();
