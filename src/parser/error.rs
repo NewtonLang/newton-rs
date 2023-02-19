@@ -37,7 +37,7 @@ pub struct LexingError<'a> {
 }
 
 impl<'a> LexingError<'a> {
-    pub fn with_cause(cause: &'static str) -> Self {
+    pub fn with_cause(cause: &'a str) -> Self {
         Self {
             cause: Some(cause),
         }

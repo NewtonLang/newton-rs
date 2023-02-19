@@ -74,6 +74,7 @@ pub enum TokenType<'a> {
     Comma,
     Question,
     At,
+    Caret,
 
     Varargs,
     EqualsEquals,
@@ -169,6 +170,7 @@ impl<'a> std::fmt::Display for TokenType<'a> {
             Self::Comma => write!(f, ","),
             Self::Question => write!(f, "?"),
             Self::At => write!(f, "@"),
+            Self::Caret => write!(f, "^"),
 
             Self::Varargs => write!(f, "..."),
             Self::EqualsEquals => write!(f, "=="),

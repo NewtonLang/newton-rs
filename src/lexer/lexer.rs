@@ -3,7 +3,6 @@ use super::token::*;
 use crate::parser::span::*;
 use crate::types::types::*;
 use crate::parser::error::*;
-use crate::semantic::error::*;
 
 macro_rules! consume_once {
     ($self: ident, $start: ident, $token: expr) => {{
@@ -40,7 +39,7 @@ macro_rules! consume_multiple {
                 Ok($self.spanned($start, $first))
             }
         } else {
-            Ok($self.spanned($start, first))
+            Ok($self.spanned($start, $first))
         }
     }};
 } 
@@ -264,7 +263,87 @@ impl<'a> Lexer<'a> {
         let ch = self.current.map(| InputPosition { value, .. } | value)?;
 
         let scanned: Scanned = match ch {
-            // TODO : add all the tokens.
+            '=' => {
+                let token = match self.chars.peek()? {
+                    (_, '=') => TokenType::EqualsEquals,
+                    (_, '>') => TokenType::Arrow,
+
+                    _ => panic!(),
+                };
+
+                self.advance();
+                self.advance();
+
+                Ok(self.spanned(start, token))
+            },
+
+            '/' => {
+                if let Some((_, '/')) = self.chars.peek() {
+                    self.read_while(| c | c != '\n');
+                    return self.scan_token();
+                }
+
+                consume_once!(self, start, TokenType::Slash)
+            },
+
+            '.' => {
+                let dots = self.read_while(| c | c == '.');
+
+                Ok(self.spanned(start, match dots.len() {
+                    1 => TokenType::Dot,
+                    3 => TokenType::Varargs,
+
+                    _ => {
+                        return Some(Err(Spanned::new(start, self.pos() - 1, LexingError::with_cause("too many dots"))));
+                    }
+                }))
+            },
+
+            '\'' => {
+                self.advance();
+
+                let c = self.read_while(| c | c != '\'');
+                let result = match c.len() {
+                    1 if c != "\\" => Ok(Spanned::new(start + 1, start + 1, TokenType::Char(&c[ .. ]))),
+                    2 if c == "\\\\" => Ok(Spanned::new(start + 1, start + 1, TokenType::Char("\\"))),
+                    2 if c == "\\0" => Ok(Spanned::new(start + 1, start + 1, TokenType::Char("\0"))),
+                    2 if c == "\\n" => Ok(Spanned::new(start + 1, start + 1, TokenType::Char("\n"))),
+                    2 if c == "\\r" => Ok(Spanned::new(start + 1, start + 1, TokenType::Char("\r"))),
+                    2 if c == "\\t" => Ok(Spanned::new(start + 1, start + 1, TokenType::Char("\t"))),
+
+                    _ => Err(Spanned::new(start, self.pos(), LexingError::with_cause("`char` must have a length of one")))
+                };
+
+                self.advance();
+
+                result
+            },
+
+            '!' => consume_multiple!(self, start, '=', TokenType::Bang, TokenType::BangEquals),
+            '+' => consume_multiple!(self, start, TokenType::Plus, TokenType::PlusPlus),
+            '-' => consume_multiple!(self, start, TokenType::Minus, TokenType::MinusMinus),
+            '<' => consume_multiple!(self, start, '=', TokenType::Smaller, TokenType::SmallerEquals),
+            '>' => consume_multiple!(self, start, '=', TokenType::Greater, TokenType::GreaterEquals),
+            '&' => consume_multiple!(self, start, TokenType::Ampersand, TokenType::AmpersandAmpersand),
+            '|' => consume_multiple!(self, start, TokenType::Pipe, TokenType::PipePipe),
+            '*' => consume_once!(self, start, TokenType::Star),
+            '%' => consume_once!(self, start, TokenType::Percent),
+            ':' => consume_once!(self, start, TokenType::Colon),
+            ';' => consume_once!(self, start, TokenType::Semicolon),
+            '(' => consume_once!(self, start, TokenType::LeftParen),
+            ')' => consume_once!(self, start, TokenType::RightParen),
+            '{' => consume_once!(self, start, TokenType::LeftBrace),
+            '}' => consume_once!(self, start, TokenType::RightBrace),
+            '[' => consume_once!(self, start, TokenType::LeftBracket),
+            ']' => consume_once!(self, start, TokenType::RightBracket),
+            '?' => consume_once!(self, start, TokenType::Question),
+            '@' => consume_once!(self, start, TokenType::At),
+            '^' => consume_once!(self, start, TokenType::Caret),
+            ',' => consume_once!(self, start, TokenType::Comma),
+
+            '"' => self.scan_string(),
+            c if c.is_alphabetic() => self.scan_identifier(),
+            c if c.is_digit(10) => self.scan_number(),
 
             _ => {
                 self.advance();
