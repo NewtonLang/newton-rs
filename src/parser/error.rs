@@ -3,13 +3,13 @@ use crate::lexer::token::*;
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub enum ParseError<'a> {
     LexingError(LexingError<'a>),
-    PrefixError(&'a str),
-    InfixError(&'a str),
+    PrefixError(String),
+    InfixError(String),
     InternalError(&'a str),
 
     ConsumeError {
         actual: TokenType<'a>,
-        expected: &'a str,
+        expected: String,
     },
 }
 

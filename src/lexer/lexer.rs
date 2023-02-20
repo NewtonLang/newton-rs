@@ -61,14 +61,14 @@ impl InputPosition {
     }
 }
 
-type Scanned<'a> = Result<Spanned<TokenType<'a>>, Spanned<LexingError<'a>>>;
+pub type Scanned<'a> = Result<Spanned<TokenType<'a>>, Spanned<ParseError<'a>>>;
 
 pub trait Scanner<'a>: Iterator<Item = Scanned<'a>> {
     fn source(&self) -> &'a Source;
 }
 
 pub struct Lexer<'a> {
-    source: &'a Source,
+    source: &'static Source<'static>,
     src: &'a str,
     chars: std::iter::Peekable<std::str::CharIndices<'a>>,
     current: Option<InputPosition>,
@@ -76,7 +76,7 @@ pub struct Lexer<'a> {
 }
 
 impl<'a> Lexer<'a> {
-    pub fn new(source: &'a Source) -> Self {
+    pub fn new(source: &'static Source) -> Self {
         let src = &source.code;
         let mut chars = src.char_indices().peekable();
 
@@ -154,7 +154,7 @@ impl<'a> Lexer<'a> {
         if slice.is_ascii() {
             Ok(self.spanned(start, TokenType::Identifier(slice)))
         } else {
-            Err(self.spanned(start, LexingError::with_cause("non-ascii identifiers are not allowed")))
+            Err(self.spanned(start, ParseError::LexingError(LexingError::with_cause("non-ascii identifiers are not allowed"))))
         }
     }
 
@@ -244,7 +244,7 @@ impl<'a> Lexer<'a> {
         if self.advance().is_none() {
             let pos = self.pos();
 
-            Err(Spanned::new(pos, pos, LexingError::with_cause("unterminated string literal")))?;
+            Err(Spanned::new(pos, pos, ParseError::LexingError(LexingError::with_cause("unterminated string literal"))))?;
         }
 
         let mut spanned = self.spanned(start, TokenType::StringLiteral(slice));
@@ -294,7 +294,7 @@ impl<'a> Lexer<'a> {
                     3 => TokenType::Varargs,
 
                     _ => {
-                        return Some(Err(Spanned::new(start, self.pos() - 1, LexingError::with_cause("too many dots"))));
+                        return Some(Err(Spanned::new(start, self.pos() - 1, ParseError::LexingError(LexingError::with_cause("too many dots")))));
                     }
                 }))
             },
@@ -311,7 +311,7 @@ impl<'a> Lexer<'a> {
                     2 if c == "\\r" => Ok(Spanned::new(start + 1, start + 1, TokenType::Char("\r"))),
                     2 if c == "\\t" => Ok(Spanned::new(start + 1, start + 1, TokenType::Char("\t"))),
 
-                    _ => Err(Spanned::new(start, self.pos(), LexingError::with_cause("`char` must have a length of one")))
+                    _ => Err(Spanned::new(start, self.pos(), ParseError::LexingError(LexingError::with_cause("`char` must have a length of one"))))
                 };
 
                 self.advance();
@@ -349,7 +349,7 @@ impl<'a> Lexer<'a> {
                 self.advance();
                 
                 let span = Span::new(start, start);
-                Err(Spanned { span, node: LexingError::default() })
+                Err(Spanned { span, node: ParseError::LexingError(LexingError::default()) })
             }
         };
 

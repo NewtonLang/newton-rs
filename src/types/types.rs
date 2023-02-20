@@ -1,4 +1,4 @@
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 pub struct UserIdentifier<'a> {
     file: &'a str,
     name: &'a str,
@@ -95,7 +95,7 @@ impl<'a> std::fmt::Display for Type<'a> {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum Simple<'a> {
     String,
     Integer(Integer),

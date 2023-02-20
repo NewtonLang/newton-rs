@@ -66,7 +66,7 @@ impl<'a> Expression<'a> {
         }
     }
 
-    pub fn is_error(&mut self) -> bool {
+    pub fn is_error(&self) -> bool {
         if let ExpressionKind::Error(..) = self.kind {
             return true;
         }
@@ -75,21 +75,21 @@ impl<'a> Expression<'a> {
     }
 
     #[inline]
-    pub fn ty(&mut self) -> std::cell::Ref<Option<Type>> {
+    pub fn ty(&self) -> std::cell::Ref<Option<Type>> {
         self.ty.borrow()
     }
 
     #[inline]
-    pub fn clone_ty(&mut self) -> Option<Type> {
+    pub fn clone_ty(&self) -> Option<Type> {
         self.ty.borrow().clone()
     }
 
     #[inline]
-    pub fn kind(&mut self) -> &ExpressionKind<'a> {
+    pub fn kind(&self) -> &ExpressionKind<'a> {
         &self.kind
     }
 
-    pub fn set_ty(&mut self, ty: Type<'a>) {
+    pub fn set_ty(&self, ty: Type<'a>) {
         self.ty.replace(Some(ty));
     }
 
@@ -168,9 +168,9 @@ impl<'a> std::fmt::Display for Expression<'a> {
 }
 
 #[derive(Debug, PartialEq, Eq)]
-pub struct Program<'a> (Vec<TopLevel<'a>>);
+pub struct Program<'a> (pub Vec<TopLevel<'a>>);
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Default)]
 pub struct Block<'a> (pub Vec<Statement<'a>>);
 
 #[derive(Debug, PartialEq, Eq)]
@@ -178,11 +178,17 @@ pub struct Parameter<'a> (pub Spanned<&'a str>, pub Spanned<Type<'a>>);
 
 impl<'a> Parameter<'a> {
     pub fn new(identifier: Spanned<&'a str>, ty: Spanned<Type<'a>>) -> Self {
-        Parameter(identifier, ty)
+        Self(identifier, ty)
     }
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Default)]
+pub struct ParameterList<'a> {
+    pub varargs: bool,
+    pub parameters: Vec<Parameter<'a>>,
+}
+
+#[derive(Debug, PartialEq, Eq, Default)]
 pub struct ArgumentList<'a> (pub Vec<Spanned<Expression<'a>>>);
 
 impl<'a> std::fmt::Display for ArgumentList<'a> {
@@ -203,7 +209,7 @@ pub struct InitializerList<'a> (pub Vec<(Spanned<&'static str>, Spanned<Expressi
 pub enum TopLevel<'a> {
     FunctionDeclaration {
         name: Spanned<&'a str>,
-        arguments: ArgumentList<'a>,
+        arguments: ParameterList<'a>,
         body: Block<'a>,
         return_type: Spanned<Type<'a>>,
         is_external: bool,
@@ -241,8 +247,8 @@ impl<'a> std::fmt::Display for TopLevel<'a> {
                     let return_type = format!("{}", return_type.node);
                     let mut args = Vec::new();
 
-                    for argument in &arguments.0 {
-                        args.push(format!("{}", argument.node));
+                    for argument in &arguments.parameters {
+                        args.push(format!("{}: {}", argument.0.node, argument.1.node));
                     }
 
                     let mut signature = String::new();

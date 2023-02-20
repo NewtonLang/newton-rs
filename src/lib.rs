@@ -9,16 +9,16 @@ pub mod semantic;
 use parser::span::Span;
 
 #[derive(Debug)]
-pub struct Source {
-    name: String,
-    code: String,
+pub struct Source<'a> {
+    name: &'a str,
+    code: &'a str,
 }
 
-impl Source {
-    pub fn new(name: &str, code: &str) -> Self {
+impl<'a> Source<'a> {
+    pub fn new(name: &'a str, code: &'a str) -> Self {
         Self {
-            name: name.to_owned(),
-            code: code.to_owned(),
+            name,
+            code,
         }
     }
 
@@ -27,31 +27,31 @@ impl Source {
     }
 
     #[inline]
-    pub fn name(&self) -> &String {
-        &self.name
+    pub fn name(&self) -> &'a str {
+        self.name
     }
 
     #[inline]
-    pub fn code(&self) -> &String {
-        &self.code
+    pub fn code(&self) -> &'a str {
+        self.code
     }
 }
 
-impl PartialEq for Source {
+impl<'a> PartialEq for Source<'a> {
     fn eq(&self, other: &Source) -> bool {
         self.name == other.name
     }
 }
 
-impl Eq for Source {}
+impl<'a> Eq for Source<'a> {}
 
-impl std::borrow::Borrow<str> for &Source {
+impl<'a> std::borrow::Borrow<str> for &Source<'a> {
     fn borrow(&self) -> &str {
-        self.name.as_str()
+        self.name
     }
 }
 
-impl std::hash::Hash for Source {
+impl<'a> std::hash::Hash for Source<'a> {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
         self.name.hash(state);
     }
