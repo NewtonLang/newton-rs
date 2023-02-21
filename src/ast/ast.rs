@@ -1,7 +1,7 @@
-use crate::types::types::*;
-use crate::parser::span::*;
 use crate::lexer::token::*;
 use crate::parser::error::*;
+use crate::parser::span::*;
+use crate::types::types::*;
 
 #[derive(Debug, PartialEq)]
 pub enum ExpressionKind<'a> {
@@ -15,9 +15,21 @@ pub enum ExpressionKind<'a> {
     Dereference(Spanned<TokenType<'a>>, Box<Spanned<Expression<'a>>>),
     Negate(Spanned<TokenType<'a>>, Box<Spanned<Expression<'a>>>),
     BoolNegate(Spanned<TokenType<'a>>, Box<Spanned<Expression<'a>>>),
-    Binary(Box<Spanned<Expression<'a>>>, Spanned<TokenType<'a>>, Box<Spanned<Expression<'a>>>),
-    BoolBinary(Box<Spanned<Expression<'a>>>, Spanned<TokenType<'a>>, Box<Spanned<Expression<'a>>>),
-    Cast(Box<Spanned<Expression<'a>>>, Spanned<TokenType<'a>>, Spanned<Type<'a>>),
+    Binary(
+        Box<Spanned<Expression<'a>>>,
+        Spanned<TokenType<'a>>,
+        Box<Spanned<Expression<'a>>>,
+    ),
+    BoolBinary(
+        Box<Spanned<Expression<'a>>>,
+        Spanned<TokenType<'a>>,
+        Box<Spanned<Expression<'a>>>,
+    ),
+    Cast(
+        Box<Spanned<Expression<'a>>>,
+        Spanned<TokenType<'a>>,
+        Spanned<Type<'a>>,
+    ),
     Identifier(&'a str),
     New(Box<Spanned<Expression<'a>>>),
     SizeOf(Type<'a>),
@@ -96,15 +108,27 @@ impl<'a> Expression<'a> {
     pub fn sub_expressions(&self) -> Vec<&Spanned<Expression<'a>>> {
         match self.kind() {
             ExpressionKind::Error(_) => panic!(),
-            ExpressionKind::NullLiteral | ExpressionKind::DecLiteral(_) | ExpressionKind::FloatLiteral(_) | ExpressionKind::StringLiteral(_) | ExpressionKind::Char(_) | ExpressionKind::SizeOf(_) | ExpressionKind::Identifier(_) => vec![],
-            ExpressionKind::New(expr) | ExpressionKind::Negate(_, expr) | ExpressionKind::BoolNegate(_, expr) | ExpressionKind::Reference(_, expr) | ExpressionKind::Dereference(_, expr) => vec![ &expr ],
-            ExpressionKind::Binary(left, _, right) => vec![ &left, &right ],
-            ExpressionKind::BoolBinary(left, _, right) => vec![ &left, &right ],
-            ExpressionKind::Cast(e, _, _) => vec![ &e ],
+            ExpressionKind::NullLiteral
+            | ExpressionKind::DecLiteral(_)
+            | ExpressionKind::FloatLiteral(_)
+            | ExpressionKind::StringLiteral(_)
+            | ExpressionKind::Char(_)
+            | ExpressionKind::SizeOf(_)
+            | ExpressionKind::Identifier(_) => vec![],
+            ExpressionKind::New(expr)
+            | ExpressionKind::Negate(_, expr)
+            | ExpressionKind::BoolNegate(_, expr)
+            | ExpressionKind::Reference(_, expr)
+            | ExpressionKind::Dereference(_, expr) => vec![&expr],
+            ExpressionKind::Binary(left, _, right) => vec![&left, &right],
+            ExpressionKind::BoolBinary(left, _, right) => vec![&left, &right],
+            ExpressionKind::Cast(e, _, _) => vec![&e],
 
-            ExpressionKind::Assignment { left, value, .. } => vec![ &left, &value ],
+            ExpressionKind::Assignment { left, value, .. } => vec![&left, &value],
 
-            ExpressionKind::Call { arguments, callee, .. } => {
+            ExpressionKind::Call {
+                arguments, callee, ..
+            } => {
                 if let ExpressionKind::Identifier(_) = callee.node.kind {
                     arguments.0.iter().collect()
                 } else {
@@ -118,11 +142,13 @@ impl<'a> Expression<'a> {
 
                     vec
                 }
-            },
+            }
 
-            ExpressionKind::Access { left, .. } => vec![ &left ],
+            ExpressionKind::Access { left, .. } => vec![&left],
 
-            ExpressionKind::StructInitialization { fields, .. } => fields.0.iter().map(| (_, e) | e).collect(),
+            ExpressionKind::StructInitialization { fields, .. } => {
+                fields.0.iter().map(|(_, e)| e).collect()
+            }
         }
     }
 
@@ -150,31 +176,54 @@ impl<'a> std::fmt::Display for Expression<'a> {
         match &self.kind {
             ExpressionKind::Error(err) => write!(f, "{err}"),
             ExpressionKind::NullLiteral => write!(f, "null"),
-            ExpressionKind::DecLiteral(lit) | ExpressionKind::FloatLiteral(lit) | ExpressionKind::StringLiteral(lit) | ExpressionKind::Char(lit) => write!(f, "{lit}"),
+            ExpressionKind::DecLiteral(lit)
+            | ExpressionKind::FloatLiteral(lit)
+            | ExpressionKind::StringLiteral(lit)
+            | ExpressionKind::Char(lit) => write!(f, "{lit}"),
             ExpressionKind::SizeOf(ty) => write!(f, "sizeof({ty})"),
             ExpressionKind::New(expr) => write!(f, "new {}", expr.node),
-            ExpressionKind::Negate(_, expr) | ExpressionKind::BoolNegate(_, expr) => write!(f, "-{}", expr.node),
+            ExpressionKind::Negate(_, expr) | ExpressionKind::BoolNegate(_, expr) => {
+                write!(f, "-{}", expr.node)
+            }
             ExpressionKind::Reference(_, expr) => write!(f, "&{}", expr.node),
             ExpressionKind::Dereference(_, expr) => write!(f, "*{}", expr.node),
-            ExpressionKind::Binary(l, op, r) | ExpressionKind::BoolBinary(l, op, r) => write!(f, "{} {} {}", l.node, op.node, r.node),
+            ExpressionKind::Binary(l, op, r) | ExpressionKind::BoolBinary(l, op, r) => {
+                write!(f, "{} {} {}", l.node, op.node, r.node)
+            }
             ExpressionKind::Identifier(name) => write!(f, "{name}"),
             ExpressionKind::Cast(expr, _, ty) => write!(f, "{} as {}", expr.node, ty.node),
-            ExpressionKind::Assignment { left, value, .. } => write!(f, "{} = {}", left.node, value.node),
-            ExpressionKind::Call { callee, arguments, .. } => write!(f, "{}({})", callee.node, arguments),
-            ExpressionKind::Access { left, identifier } => write!(f, "{}.{}", left.node, identifier.node),
-            ExpressionKind::StructInitialization { identifier, fields } => write!(f, "{} {{ {} }}", identifier.node, fields.0.iter().map(| (n, e) | format!("{}: {}", n.node, e.node)).collect::<Vec<String>>().join(",\n"))
+            ExpressionKind::Assignment { left, value, .. } => {
+                write!(f, "{} = {}", left.node, value.node)
+            }
+            ExpressionKind::Call {
+                callee, arguments, ..
+            } => write!(f, "{}({})", callee.node, arguments),
+            ExpressionKind::Access { left, identifier } => {
+                write!(f, "{}.{}", left.node, identifier.node)
+            }
+            ExpressionKind::StructInitialization { identifier, fields } => write!(
+                f,
+                "{} {{ {} }}",
+                identifier.node,
+                fields
+                    .0
+                    .iter()
+                    .map(|(n, e)| format!("{}: {}", n.node, e.node))
+                    .collect::<Vec<String>>()
+                    .join(",\n")
+            ),
         }
     }
 }
 
 #[derive(Debug, PartialEq, Eq)]
-pub struct Program<'a> (pub Vec<TopLevel<'a>>);
+pub struct Program<'a>(pub Vec<TopLevel<'a>>);
 
 #[derive(Debug, PartialEq, Eq, Default)]
-pub struct Block<'a> (pub Vec<Statement<'a>>);
+pub struct Block<'a>(pub Vec<Statement<'a>>);
 
 #[derive(Debug, PartialEq, Eq)]
-pub struct Parameter<'a> (pub Spanned<&'a str>, pub Spanned<Type<'a>>);
+pub struct Parameter<'a>(pub Spanned<&'a str>, pub Spanned<Type<'a>>);
 
 impl<'a> Parameter<'a> {
     pub fn new(identifier: Spanned<&'a str>, ty: Spanned<Type<'a>>) -> Self {
@@ -189,21 +238,21 @@ pub struct ParameterList<'a> {
 }
 
 #[derive(Debug, PartialEq, Eq)]
-pub struct ArgumentList<'a> (pub Vec<Spanned<Expression<'a>>>);
+pub struct ArgumentList<'a>(pub Vec<Spanned<Expression<'a>>>);
 
 impl<'a> std::fmt::Display for ArgumentList<'a> {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         let strings: Vec<String> = self
             .0
             .iter()
-            .map(| Spanned { node, .. } | node.to_string())
+            .map(|Spanned { node, .. }| node.to_string())
             .collect();
         write!(f, "{}", strings.join(", "))
     }
 }
 
 #[derive(Debug, PartialEq)]
-pub struct InitializerList<'a> (pub Vec<(Spanned<&'a str>, Spanned<Expression<'a>>)>);
+pub struct InitializerList<'a>(pub Vec<(Spanned<&'a str>, Spanned<Expression<'a>>)>);
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum TopLevel<'a> {
@@ -225,7 +274,7 @@ pub enum TopLevel<'a> {
 
     Error {
         error: Spanned<ParseError<'a>>,
-    }
+    },
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -233,7 +282,17 @@ pub enum TypeDeclaration<'a> {
     StructDefinition {
         name: Spanned<&'a str>,
         fields: Vec<(Spanned<&'a str>, Spanned<Type<'a>>)>,
-    }
+        methods: Vec<TopLevel<'a>>,
+    },
+
+    TraitDefinition {
+        name: Spanned<&'a str>,
+    },
+
+    EnumDefinition {
+        name: Spanned<&'a str>,
+        fields: Vec<(Spanned<&'a str>, Spanned<Type<'a>>)>,
+    },
 }
 
 #[derive(Debug, PartialEq, Eq)]

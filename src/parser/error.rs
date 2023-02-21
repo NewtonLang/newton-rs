@@ -20,7 +20,9 @@ impl<'a> std::fmt::Display for ParseError<'a> {
             Self::PrefixError(err) => write!(f, "{}", err),
             Self::InfixError(err) => write!(f, "{}", err),
             Self::InternalError(err) => write!(f, "An internal error has occured!\n\t{}", err),
-            Self::ConsumeError { expected, actual } => write!(f, "expected '{}', but got '{}' instead", expected, actual),
+            Self::ConsumeError { expected, actual } => {
+                write!(f, "expected '{}', but got '{}' instead", expected, actual)
+            }
         }
     }
 }
@@ -38,9 +40,7 @@ pub struct LexingError<'a> {
 
 impl<'a> LexingError<'a> {
     pub fn with_cause(cause: &'a str) -> Self {
-        Self {
-            cause: Some(cause),
-        }
+        Self { cause: Some(cause) }
     }
 
     fn as_string(&self) -> String {

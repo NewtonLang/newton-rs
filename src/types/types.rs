@@ -6,10 +6,7 @@ pub struct UserIdentifier<'a> {
 
 impl<'a> UserIdentifier<'a> {
     pub fn new(file: &'a str, name: &'a str) -> Self {
-        Self {
-            file,
-            name,
-        }
+        Self { file, name }
     }
 
     pub fn file(&mut self) -> &'a str {
@@ -36,7 +33,9 @@ pub enum Type<'a> {
 impl<'a> Type<'a> {
     pub fn is_pointer(&self) -> bool {
         match self {
-            Type::Complex(Complex::Array(_)) | Type::Complex(Complex::Pointer(_)) | Type::Simple(Simple::String) => true,
+            Type::Complex(Complex::Array(_))
+            | Type::Complex(Complex::Pointer(_))
+            | Type::Simple(Simple::String) => true,
             _ => false,
         }
     }
@@ -140,10 +139,7 @@ pub struct Integer {
 
 impl Integer {
     pub fn new_signed_int(size: u8) -> Self {
-        Self {
-            size,
-            signed: true,
-        }
+        Self { size, signed: true }
     }
 
     pub fn new_unsigned_int(size: u8) -> Self {
@@ -176,20 +172,16 @@ impl std::fmt::Display for Integer {
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct Float {
-    size: u8
+    size: u8,
 }
 
 impl Float {
     pub fn new_f32() -> Self {
-        Self {
-            size: 32,
-        }
+        Self { size: 32 }
     }
 
     pub fn new_f64() -> Self {
-        Self {
-            size: 64,
-        }
+        Self { size: 64 }
     }
 
     #[inline]
@@ -238,10 +230,7 @@ impl<'a> Pointer<'a> {
             panic!("ERROR : pointer cannot be more than `**` long.")
         }
 
-        Self {
-            base_type,
-            size,
-        }
+        Self { base_type, size }
     }
 }
 
@@ -263,10 +252,7 @@ impl<'a> Ref<'a> {
             panic!("ERROR : ref cannot be more than `&&` long.");
         }
 
-        Self {
-            base_type,
-            size,
-        }
+        Self { base_type, size }
     }
 }
 
@@ -284,10 +270,7 @@ pub struct Array<'a> {
 
 impl<'a> Array<'a> {
     pub fn new(base_type: Simple<'a>, size: Option<u64>) -> Self {
-        Self {
-            base_type,
-            size
-        }
+        Self { base_type, size }
     }
 
     #[inline]
@@ -305,7 +288,7 @@ impl<'a> std::fmt::Display for Array<'a> {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         match self.size {
             Some(sz) => write!(f, "[{}]{}", sz, self.base_type),
-            None => write!(f, "[?]{}", self.base_type)
+            None => write!(f, "[?]{}", self.base_type),
         }
     }
 }

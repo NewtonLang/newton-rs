@@ -1,10 +1,10 @@
-pub mod ir;
 pub mod ast;
-pub mod lexer;
-pub mod types;
-pub mod parser;
 pub mod codegen;
+pub mod ir;
+pub mod lexer;
+pub mod parser;
 pub mod semantic;
+pub mod types;
 
 use parser::span::Span;
 
@@ -23,7 +23,7 @@ impl Source {
     }
 
     pub fn slice(&self, span: Span) -> &str {
-        &self.code[ span.start ..= span.end ]
+        &self.code[span.start..=span.end]
     }
 }
 

@@ -94,11 +94,13 @@ impl<'a> TokenType<'a> {
             Self::Equals => Precedence::Assignment,
             Self::AmpersandAmpersand | Self::PipePipe => Precedence::And,
             Self::EqualsEquals | Self::BangEquals => Precedence::Equality,
-            Self::Greater | Self::GreaterEquals | Self::Smaller | Self::SmallerEquals => Precedence::Comparison,
+            Self::Greater | Self::GreaterEquals | Self::Smaller | Self::SmallerEquals => {
+                Precedence::Comparison
+            }
             Self::Plus | Self::PlusPlus | Self::Minus | Self::MinusMinus => Precedence::Sum,
             Self::Star | Self::Slash | Self::Percent | Self::As => Precedence::Product,
             Self::LeftParen | Self::LeftBrace | Self::Dot => Precedence::Call,
-             _ => Precedence::None,
+            _ => Precedence::None,
         }
     }
 }
@@ -107,7 +109,9 @@ impl<'a> std::fmt::Display for TokenType<'a> {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         match self {
             Self::NullLiteral => write!(f, "null"),
-            Self::Identifier(ref val) | Self::StringLiteral(ref val) | Self::Char(ref val) => write!(f, "{val}"),
+            Self::Identifier(ref val) | Self::StringLiteral(ref val) | Self::Char(ref val) => {
+                write!(f, "{val}")
+            }
             Self::TypeIdentifier(val) => write!(f, "{val}"),
             Self::DecLiteral(val) | Self::FloatLiteral(val) => write!(f, "{val}"),
 

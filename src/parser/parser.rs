@@ -1,10 +1,10 @@
-use crate::Source;
-use super::span::*;
 use super::error::*;
+use super::span::*;
 use crate::ast::ast::*;
+use crate::lexer::lexer::*;
 use crate::lexer::token::*;
 use crate::types::types::*;
-use crate::lexer::lexer::*;
+use crate::Source;
 
 type ParseResult<'a, T> = Result<T, Spanned<ParseError<'a>>>;
 
@@ -13,17 +13,27 @@ type StatementResult<'a> = ParseResult<'a, Statement<'a>>;
 type ExpressionResult<'a> = ParseResult<'a, Spanned<Expression<'a>>>;
 
 fn error_statement(error: Spanned<ParseError>) -> Statement {
-    Statement::ExpressionStatement(Spanned::new(error.span.start, error.span.end, Expression::new(ExpressionKind::Error(error.node))))
+    Statement::ExpressionStatement(Spanned::new(
+        error.span.start,
+        error.span.end,
+        Expression::new(ExpressionKind::Error(error.node)),
+    ))
 }
 
-pub struct Parser<'a, T> where T: Scanner<'a> {
+pub struct Parser<'a, T>
+where
+    T: Scanner<'a>,
+{
     pub(crate) source: &'a Source,
     pub(crate) error_count: usize,
 
     scanner: std::iter::Peekable<T>,
 }
 
-impl<'a, T> Parser<'a, T> where T: Scanner<'a> + 'a {
+impl<'a, T> Parser<'a, T>
+where
+    T: Scanner<'a> + 'a,
+{
     pub fn new(scanner: T) -> Self {
         let source = scanner.source();
         let peekable = scanner.peekable();
@@ -47,7 +57,10 @@ impl<'a, T> Parser<'a, T> where T: Scanner<'a> + 'a {
                 top_level_declarations.push(TopLevel::Error { error });
                 self.error_count += 1;
 
-                while !(self.peek_equals(&TokenType::Fn) || self.peek_equals(&TokenType::Type) || self.at_end()) {
+                while !(self.peek_equals(&TokenType::Fn)
+                    || self.peek_equals(&TokenType::Type)
+                    || self.at_end())
+                {
                     if let Err(error) = self.advance() {
                         panic!("error in {}: {:?}", self.source.name, error);
                     }
@@ -58,7 +71,11 @@ impl<'a, T> Parser<'a, T> where T: Scanner<'a> + 'a {
         Program(top_level_declarations)
     }
 
-    fn parse_expression(&mut self, precedence: Precedence, no_struct: bool) -> ExpressionResult<'a> {
+    fn parse_expression(
+        &mut self,
+        precedence: Precedence,
+        no_struct: bool,
+    ) -> ExpressionResult<'a> {
         let token = self.advance()?;
         let mut left = self.prefix(&token, no_struct)?;
 
@@ -77,7 +94,15 @@ impl<'a, T> Parser<'a, T> where T: Scanner<'a> + 'a {
             let eq = self.consume(TokenType::Equals)?;
             let value = Box::new(self.expression(no_struct)?);
 
-            left = Spanned::new(left.span.start, value.span.end, Expression::new(ExpressionKind::Assignment { left: Box::new(left), eq, value }));
+            left = Spanned::new(
+                left.span.start,
+                value.span.end,
+                Expression::new(ExpressionKind::Assignment {
+                    left: Box::new(left),
+                    eq,
+                    value,
+                }),
+            );
         }
 
         Ok(left)
@@ -91,7 +116,7 @@ impl<'a, T> Parser<'a, T> where T: Scanner<'a> + 'a {
                     self.consume(TokenType::Semicolon)?;
 
                     return Ok(declaration);
-                },
+                }
 
                 TokenType::If => return Ok(self.if_statement()?),
                 TokenType::Return => return Ok(self.return_statement()?),
@@ -105,7 +130,7 @@ impl<'a, T> Parser<'a, T> where T: Scanner<'a> + 'a {
         let expression = self.expression(false)?;
         self.consume(TokenType::Semicolon)?;
 
-        Ok(Statement::ExpressionStatement(expression ))
+        Ok(Statement::ExpressionStatement(expression))
     }
 
     fn let_declaration(&mut self) -> StatementResult<'a> {
@@ -122,7 +147,14 @@ impl<'a, T> Parser<'a, T> where T: Scanner<'a> + 'a {
         let eq = self.consume(TokenType::Equals)?;
         let value = self.expression(false)?;
 
-        Ok(Statement::VariableDeclaration(Box::new(VariableDeclaration { name, value, eq, ty })))
+        Ok(Statement::VariableDeclaration(Box::new(
+            VariableDeclaration {
+                name,
+                value,
+                eq,
+                ty,
+            },
+        )))
     }
 
     fn if_statement(&mut self) -> StatementResult<'a> {
@@ -146,17 +178,23 @@ impl<'a, T> Parser<'a, T> where T: Scanner<'a> + 'a {
             None
         };
 
-        Ok(Statement::IfStatement(Box::new(IfStatement { condition, then_block, else_branch })))
+        Ok(Statement::IfStatement(Box::new(IfStatement {
+            condition,
+            then_block,
+            else_branch,
+        })))
     }
 
     fn return_statement(&mut self) -> StatementResult<'a> {
         self.consume(TokenType::Return)?;
 
-        let ret = Ok(Statement::ReturnStatement(if self.peek_equals(&TokenType::Semicolon) {
-            None
-        } else {
-            Some(self.expression(false)?)
-        }));
+        let ret = Ok(Statement::ReturnStatement(
+            if self.peek_equals(&TokenType::Semicolon) {
+                None
+            } else {
+                Some(self.expression(false)?)
+            },
+        ));
 
         self.consume(TokenType::Semicolon)?;
 
@@ -169,7 +207,10 @@ impl<'a, T> Parser<'a, T> where T: Scanner<'a> + 'a {
         let condition = self.expression(true)?;
         let body = self.block()?;
 
-        Ok(Statement::WhileStatement(Box::new(WhileStatement { condition, body })))
+        Ok(Statement::WhileStatement(Box::new(WhileStatement {
+            condition,
+            body,
+        })))
     }
 
     fn delete_statement(&mut self) -> StatementResult<'a> {
@@ -181,7 +222,7 @@ impl<'a, T> Parser<'a, T> where T: Scanner<'a> + 'a {
     }
 
     fn next_higher_precedence(&mut self, precedence: Precedence, no_struct: bool) -> bool {
-        self.scanner.peek().map_or(false, | scanned | {
+        self.scanner.peek().map_or(false, |scanned| {
             if let Ok(spanned) = scanned {
                 if let TokenType::LeftBrace = spanned.node {
                     return !no_struct && spanned.node.precedence() > precedence;
@@ -194,17 +235,7 @@ impl<'a, T> Parser<'a, T> where T: Scanner<'a> + 'a {
         })
     }
 
-
-
-    fn top_level_declaration(&mut self) -> TopLevelResult<'a> {
-        if self.peek_equals(&TokenType::Import) {
-            return self.import_statement();
-        }
-
-        if self.peek_equals(&TokenType::Type) {
-            return self.type_declaration_statement();
-        }
-
+    fn function_definition(&mut self) -> TopLevelResult<'a> {
         let is_external = self.peek_equals(&TokenType::Extern);
         if is_external {
             self.consume(TokenType::Extern)?;
@@ -225,7 +256,25 @@ impl<'a, T> Parser<'a, T> where T: Scanner<'a> + 'a {
             self.block()?
         };
 
-        Ok(TopLevel::FunctionDeclaration { name, arguments, body, return_type, is_external })
+        Ok(TopLevel::FunctionDeclaration {
+            name,
+            arguments,
+            body,
+            return_type,
+            is_external,
+        })
+    }
+
+    fn top_level_declaration(&mut self) -> TopLevelResult<'a> {
+        if self.peek_equals(&TokenType::Import) {
+            return self.import_statement();
+        }
+
+        if self.peek_equals(&TokenType::Type) {
+            return self.type_declaration_statement();
+        }
+
+        self.function_definition()
     }
 
     fn import_statement(&mut self) -> TopLevelResult<'a> {
@@ -236,34 +285,122 @@ impl<'a, T> Parser<'a, T> where T: Scanner<'a> + 'a {
         Ok(TopLevel::Import { name })
     }
 
-    fn type_declaration_statement(&mut self) -> TopLevelResult<'a> {
-        self.consume(TokenType::Type)?;
-
-        let name = self.consume_identifier()?;
-
+    fn struct_declaration(&mut self, name: &Spanned<&'a str>) -> TopLevelResult<'a> {
         self.consume(TokenType::Struct)?;
         self.consume(TokenType::LeftBrace)?;
 
         let mut fields = Vec::new();
+        let mut methods = Vec::new();
+
         if !self.at_end() && !self.peek_equals(&TokenType::RightBrace) {
             loop {
-                let field_name = self.consume_identifier()?;
-                self.consume(TokenType::Colon)?;
+                if self.peek_equals(&TokenType::At) {
+                    self.advance()?;
 
-                let field_type = self.consume_type()?;
-                fields.push((field_name, field_type));
+                    let field_name = self.consume_identifier()?;
+                    self.consume(TokenType::Colon)?;
+
+                    let field_type = self.consume_type()?;
+                    fields.push((field_name, field_type));
+                }
+
+                if self.peek_equals(&TokenType::Fn) {
+                    let method = self.function_definition()?;
+
+                    match method {
+                        TopLevel::FunctionDeclaration {
+                            name,
+                            arguments,
+                            body,
+                            return_type,
+                            is_external,
+                        } => {
+                            methods.push(TopLevel::FunctionDeclaration {
+                                name,
+                                arguments,
+                                body,
+                                return_type,
+                                is_external,
+                            });
+                        }
+
+                        _ => panic!("expected a method declaration"),
+                    }
+                }
 
                 if self.at_end() || self.peek_equals(&TokenType::RightBrace) {
                     break;
                 }
 
-                self.consume(TokenType::Comma)?;
+                self.consume(TokenType::Semicolon)?;
             }
         }
 
         self.consume(TokenType::RightBrace)?;
 
-        Ok(TopLevel::TypeDeclaration { ty: TypeDeclaration::StructDefinition { name, fields } })
+        return Ok(TopLevel::TypeDeclaration {
+            ty: TypeDeclaration::StructDefinition {
+                name: *name,
+                fields,
+                methods,
+            },
+        });
+    }
+
+    fn enum_declaration(&mut self, name: &Spanned<&'a str>) -> TopLevelResult<'a> {
+        self.consume(TokenType::Enum)?;
+
+        let mut ty = Spanned::new(0, 0, Type::Simple(Simple::Void));
+        if self.peek_equals(&TokenType::Colon) {
+            self.consume(TokenType::Colon)?;
+            ty = self.consume_type()?;
+        }
+
+        self.consume(TokenType::LeftBrace)?;
+
+        let mut fields = Vec::new();
+
+        if !self.at_end() && !self.peek_equals(&TokenType::RightBrace) {
+            loop {
+                let field_name = self.consume_identifier()?;
+                fields.push((field_name, ty.clone()));
+
+                if self.at_end() || self.peek_equals(&TokenType::RightBrace) {
+                    break;
+                }
+            }
+        }
+
+        self.consume(TokenType::RightBrace)?;
+
+        return Ok(TopLevel::TypeDeclaration {
+            ty: TypeDeclaration::EnumDefinition { name: *name, fields },
+        });
+    }
+
+    fn type_declaration_statement(&mut self) -> TopLevelResult<'a> {
+        self.consume(TokenType::Type)?;
+
+        let name = self.consume_identifier()?;
+
+        if self.peek_equals(&TokenType::Struct) {
+            return self.struct_declaration(&name);
+        }
+
+        if self.peek_equals(&TokenType::Trait) {
+            panic!("NOT IMPLEMENTED YET")
+        }
+
+        if self.peek_equals(&TokenType::Enum) {
+            return self.enum_declaration(&name);
+        }
+
+        TopLevelResult::Err(Spanned::new_from_span(
+            name.span,
+            ParseError::InternalError(
+                "tried to define something that does not belong to top level",
+            ),
+        ))
     }
 
     fn parameter_list(&mut self, is_external: bool) -> ParseResult<'a, ParameterList<'a>> {
@@ -286,7 +423,10 @@ impl<'a, T> Parser<'a, T> where T: Scanner<'a> + 'a {
                 varargs = true;
 
                 let spanned = Spanned::new_from_span(varargs_token.span, "...");
-                parameters.push(Parameter::new(spanned, Spanned::new_from_span(varargs_token.span, Type::Simple(Simple::VarArgs))));
+                parameters.push(Parameter::new(
+                    spanned,
+                    Spanned::new_from_span(varargs_token.span, Type::Simple(Simple::VarArgs)),
+                ));
 
                 break;
             }
@@ -304,12 +444,15 @@ impl<'a, T> Parser<'a, T> where T: Scanner<'a> + 'a {
 
         self.consume(TokenType::RightParen)?;
 
-        Ok(ParameterList { varargs, parameters })
+        Ok(ParameterList {
+            varargs,
+            parameters,
+        })
     }
 
     fn argument_list(&mut self) -> ParseResult<'a, ArgumentList<'a>> {
         let mut arguments = vec![];
-        
+
         while !self.at_end() && !self.peek_equals(&TokenType::RightParen) {
             arguments.push(self.expression(false)?);
 
@@ -365,14 +508,20 @@ impl<'a, T> Parser<'a, T> where T: Scanner<'a> + 'a {
         if let Some(peek) = self.scanner.peek().cloned() {
             return match peek {
                 Ok(peek) => {
-                    if let Spanned { node: TokenType::Identifier(identifier), span } = peek {
+                    if let Spanned {
+                        node: TokenType::Identifier(identifier),
+                        span,
+                    } = peek
+                    {
                         self.advance()?;
                         return Ok(Spanned::new_from_span(span, identifier));
                     } else {
                         let token = Spanned::clone(&peek);
-                        return Err(self.consume_error(&token, "identifier".to_owned()).unwrap_err());
+                        return Err(self
+                            .consume_error(&token, "identifier".to_owned())
+                            .unwrap_err());
                     }
-                },
+                }
 
                 Err(error) => Err(error),
             };
@@ -385,14 +534,18 @@ impl<'a, T> Parser<'a, T> where T: Scanner<'a> + 'a {
         if let Some(peek) = self.scanner.peek().cloned() {
             return match peek {
                 Ok(peek) => {
-                    if let Spanned { node: TokenType::StringLiteral(literal), span } = peek {
+                    if let Spanned {
+                        node: TokenType::StringLiteral(literal),
+                        span,
+                    } = peek
+                    {
                         self.advance()?;
                         return Ok(Spanned::new_from_span(span, literal));
                     } else {
                         let token = Spanned::clone(&peek);
                         return Err(self.consume_error(&token, "string".to_owned()).unwrap_err());
                     }
-                },
+                }
 
                 Err(error) => Err(error),
             };
@@ -401,16 +554,26 @@ impl<'a, T> Parser<'a, T> where T: Scanner<'a> + 'a {
         Err(self.eof().unwrap_err())
     }
 
-    fn user_identifier(&self, expression: &mut Spanned<Expression<'a>>) -> ParseResult<'a, UserIdentifier<'a>> {
+    fn user_identifier(
+        &self,
+        expression: &mut Spanned<Expression<'a>>,
+    ) -> ParseResult<'a, UserIdentifier<'a>> {
         Ok(match expression.node.kind() {
-            ExpressionKind::Identifier(identifier) => UserIdentifier::new(&self.source.name, identifier),
+            ExpressionKind::Identifier(identifier) => {
+                UserIdentifier::new(&self.source.name, identifier)
+            }
             ExpressionKind::Access { left, identifier } => {
                 if let ExpressionKind::Identifier(left) = left.node.kind() {
                     UserIdentifier::new(left, identifier.node)
                 } else {
-                    return Err(Spanned::new_from_span(left.span, ParseError::InternalError("the left side of this expression has to be an identifier")));
+                    return Err(Spanned::new_from_span(
+                        left.span,
+                        ParseError::InternalError(
+                            "the left side of this expression has to be an identifier",
+                        ),
+                    ));
                 }
-            },
+            }
 
             _ => {
                 return Err(Spanned::new_from_span(expression.span, ParseError::InternalError("the expression for a user identifier has to be an identifier or access expression")));
@@ -421,46 +584,60 @@ impl<'a, T> Parser<'a, T> where T: Scanner<'a> + 'a {
     fn consume_type(&mut self) -> ParseResult<'a, Spanned<Type<'a>>> {
         if let Some(peek) = self.scanner.peek().cloned() {
             return match peek {
-                Ok(peek) => {
-                    match peek {
-                        Spanned { node: TokenType::TypeIdentifier(ty), span } => {
-                            self.advance()?;
-                            Ok(Spanned::new_from_span(span, Type::Simple(ty)))
-                        },
+                Ok(peek) => match peek {
+                    Spanned {
+                        node: TokenType::TypeIdentifier(ty),
+                        span,
+                    } => {
+                        self.advance()?;
+                        Ok(Spanned::new_from_span(span, Type::Simple(ty)))
+                    }
 
-                        Spanned { node: TokenType::Identifier(_), .. } => {
-                            let mut expression = self.parse_expression(Precedence::Assignment, true)?;
-                            let identifier = self.user_identifier(&mut expression)?;
+                    Spanned {
+                        node: TokenType::Identifier(_),
+                        ..
+                    } => {
+                        let mut expression = self.parse_expression(Precedence::Assignment, true)?;
+                        let identifier = self.user_identifier(&mut expression)?;
 
-                            Ok(Spanned::new_from_span(expression.span, Type::Simple(Simple::UserDefinedType(identifier))))
-                        },
+                        Ok(Spanned::new_from_span(
+                            expression.span,
+                            Type::Simple(Simple::UserDefinedType(identifier)),
+                        ))
+                    }
 
-                        Spanned { node: TokenType::Star, .. } => {
-                            let mut counter = 1;
-                            let start = self.advance()?.span.start;
+                    Spanned {
+                        node: TokenType::Star,
+                        ..
+                    } => {
+                        let mut counter = 1;
+                        let start = self.advance()?.span.start;
 
-                            while self.match_token(TokenType::Star)? {
-                                counter += 1;
-                            }
-
-                            let ty = self.consume_type()?;
-                            let (inner, end) = if let Type::Simple(s) = ty.node {
-                                (s, ty.span.end)
-                            } else {
-                                return Err(Spanned::new_from_span(ty.span, ParseError::InternalError("reached unreachable code while attempting to parse a pointer type")));
-                            };
-
-                            Ok(Spanned::new(start, end, Type::Complex(Complex::Pointer(Pointer::new(inner, counter)))))
-                        },
-
-                        _ => {
-                            let token = Spanned::clone(&peek);
-                            Err(self.consume_error(&token, "type".to_owned()).unwrap_err())
+                        while self.match_token(TokenType::Star)? {
+                            counter += 1;
                         }
+
+                        let ty = self.consume_type()?;
+                        let (inner, end) = if let Type::Simple(s) = ty.node {
+                            (s, ty.span.end)
+                        } else {
+                            return Err(Spanned::new_from_span(ty.span, ParseError::InternalError("reached unreachable code while attempting to parse a pointer type")));
+                        };
+
+                        Ok(Spanned::new(
+                            start,
+                            end,
+                            Type::Complex(Complex::Pointer(Pointer::new(inner, counter))),
+                        ))
+                    }
+
+                    _ => {
+                        let token = Spanned::clone(&peek);
+                        Err(self.consume_error(&token, "type".to_owned()).unwrap_err())
                     }
                 },
 
-                Err(error) => Err(error)
+                Err(error) => Err(error),
             };
         }
 
@@ -468,7 +645,7 @@ impl<'a, T> Parser<'a, T> where T: Scanner<'a> + 'a {
     }
 
     fn prefix(&mut self, token: &Spanned<TokenType<'a>>, no_struct: bool) -> ExpressionResult<'a> {
-        let ok_spanned = | kind | Ok(Spanned::new_from_span(token.span, Expression::new(kind)));
+        let ok_spanned = |kind| Ok(Spanned::new_from_span(token.span, Expression::new(kind)));
 
         match token.node {
             TokenType::NullLiteral => ok_spanned(ExpressionKind::NullLiteral),
@@ -482,14 +659,20 @@ impl<'a, T> Parser<'a, T> where T: Scanner<'a> + 'a {
                 let sizeof = ExpressionKind::SizeOf(ty.node);
 
                 Ok(Spanned::new_from_span(ty.span, Expression::new(sizeof)))
-            },
+            }
 
             TokenType::New => {
                 let expression = self.expression(no_struct)?;
-                let new = ExpressionKind::New(Box::new(Spanned::new_from_span(expression.span, expression.node)));
+                let new = ExpressionKind::New(Box::new(Spanned::new_from_span(
+                    expression.span,
+                    expression.node,
+                )));
 
-                Ok(Spanned::new_from_span(expression.span, Expression::new(new)))
-            },
+                Ok(Spanned::new_from_span(
+                    expression.span,
+                    Expression::new(new),
+                ))
+            }
 
             TokenType::LeftParen => {
                 let mut expression = self.expression(false)?;
@@ -499,102 +682,147 @@ impl<'a, T> Parser<'a, T> where T: Scanner<'a> + 'a {
                 expression.span.end += 1;
 
                 Ok(expression)
-            },
+            }
 
             TokenType::Minus => {
                 let next = self.parse_expression(Precedence::Unary, no_struct)?;
 
-                Ok(Spanned::new(token.span.start, next.span.end, Expression::new(ExpressionKind::Negate(token.clone(), Box::new(next)))))
-            },
+                Ok(Spanned::new(
+                    token.span.start,
+                    next.span.end,
+                    Expression::new(ExpressionKind::Negate(token.clone(), Box::new(next))),
+                ))
+            }
 
             TokenType::Ampersand => {
                 let next = self.parse_expression(Precedence::Unary, no_struct)?;
 
-                Ok(Spanned::new(token.span.start, next.span.end, Expression::new(ExpressionKind::Reference(token.clone(), Box::new(next)))))
-            },
+                Ok(Spanned::new(
+                    token.span.start,
+                    next.span.end,
+                    Expression::new(ExpressionKind::Reference(token.clone(), Box::new(next))),
+                ))
+            }
 
             TokenType::Star => {
                 let next = self.parse_expression(Precedence::Unary, no_struct)?;
 
-                Ok(Spanned::new(token.span.start, next.span.end, Expression::new(ExpressionKind::Dereference(token.clone(), Box::new(next)))))
-            },
+                Ok(Spanned::new(
+                    token.span.start,
+                    next.span.end,
+                    Expression::new(ExpressionKind::Dereference(token.clone(), Box::new(next))),
+                ))
+            }
 
             TokenType::Bang => {
                 let next = self.parse_expression(Precedence::Unary, no_struct)?;
 
-                Ok(Spanned::new(token.span.start, next.span.end, Expression::new(ExpressionKind::BoolNegate(token.clone(), Box::new(next)))))
-            },
+                Ok(Spanned::new(
+                    token.span.start,
+                    next.span.end,
+                    Expression::new(ExpressionKind::BoolNegate(token.clone(), Box::new(next))),
+                ))
+            }
 
             TokenType::Identifier(ref name) => {
                 if !no_struct && self.match_token(TokenType::LeftBrace)? {
                     let init_list = self.initializer_list()?;
                     let brace = self.consume(TokenType::RightBrace)?;
 
-                    Ok(Spanned::new(token.span.start, brace.span.end, Expression::new(ExpressionKind::StructInitialization { 
-                        identifier: Spanned::new_from_span(token.span, UserIdentifier::new(&self.source.name, name)), 
-                        fields: init_list 
-                    })))
+                    Ok(Spanned::new(
+                        token.span.start,
+                        brace.span.end,
+                        Expression::new(ExpressionKind::StructInitialization {
+                            identifier: Spanned::new_from_span(
+                                token.span,
+                                UserIdentifier::new(&self.source.name, name),
+                            ),
+                            fields: init_list,
+                        }),
+                    ))
                 } else {
                     ok_spanned(ExpressionKind::Identifier(name))
                 }
-            },
+            }
 
             _ => self.prefix_error(token),
         }
     }
 
-    fn infix(&mut self, token: &Spanned<TokenType<'a>>, mut left: Spanned<Expression<'a>>, no_struct: bool) -> ExpressionResult<'a> {
+    fn infix(
+        &mut self,
+        token: &Spanned<TokenType<'a>>,
+        mut left: Spanned<Expression<'a>>,
+        no_struct: bool,
+    ) -> ExpressionResult<'a> {
         let tok = &token.node;
 
         match tok {
-            TokenType::EqualsEquals | 
-            TokenType::BangEquals | 
-            TokenType::Smaller | 
-            TokenType::SmallerEquals | 
-            TokenType::Greater | 
-            TokenType::GreaterEquals | 
-            TokenType::AmpersandAmpersand | 
-            TokenType::PipePipe | 
-            TokenType::Plus | 
-            TokenType::Minus | 
-            TokenType::Star | 
-            TokenType::Slash | 
-            TokenType::Percent => {
+            TokenType::EqualsEquals
+            | TokenType::BangEquals
+            | TokenType::Smaller
+            | TokenType::SmallerEquals
+            | TokenType::Greater
+            | TokenType::GreaterEquals
+            | TokenType::AmpersandAmpersand
+            | TokenType::PipePipe
+            | TokenType::Plus
+            | TokenType::Minus
+            | TokenType::Star
+            | TokenType::Slash
+            | TokenType::Percent => {
                 let right = self.parse_expression(tok.precedence(), no_struct)?;
                 let right_span = right.span;
                 let left_span = left.span;
 
                 let expression = match tok {
-                    TokenType::EqualsEquals |
-                    TokenType::BangEquals |
-                    TokenType::Smaller |
-                    TokenType::SmallerEquals |
-                    TokenType::Greater |
-                    TokenType::GreaterEquals |
-                    TokenType::AmpersandAmpersand |
-                    TokenType::PipePipe => {
+                    TokenType::EqualsEquals
+                    | TokenType::BangEquals
+                    | TokenType::Smaller
+                    | TokenType::SmallerEquals
+                    | TokenType::Greater
+                    | TokenType::GreaterEquals
+                    | TokenType::AmpersandAmpersand
+                    | TokenType::PipePipe => {
                         ExpressionKind::BoolBinary(Box::new(left), token.clone(), Box::new(right))
-                    },
-
-                    _ => {
-                        ExpressionKind::Binary(Box::new(left), token.clone(), Box::new(Spanned::new_from_span(right.span, right.node)))
                     }
+
+                    _ => ExpressionKind::Binary(
+                        Box::new(left),
+                        token.clone(),
+                        Box::new(Spanned::new_from_span(right.span, right.node)),
+                    ),
                 };
 
-                Ok(Spanned::new(left_span.start, right_span.end, Expression::new(expression)))
-            },
+                Ok(Spanned::new(
+                    left_span.start,
+                    right_span.end,
+                    Expression::new(expression),
+                ))
+            }
 
             TokenType::As => {
                 let expression = Box::new(left);
                 let ty = self.consume_type()?;
 
-                Ok(Spanned::new(expression.span.start, ty.span.end, Expression::new(ExpressionKind::Cast(expression, token.clone(), ty))))
-            },
+                Ok(Spanned::new(
+                    expression.span.start,
+                    ty.span.end,
+                    Expression::new(ExpressionKind::Cast(expression, token.clone(), ty)),
+                ))
+            }
 
             TokenType::Dot => {
                 let identifier = self.consume_identifier()?;
-                Ok(Spanned::new(left.span.start, identifier.span.end, Expression::new(ExpressionKind::Access { left: Box::new(left), identifier })))
-            },
+                Ok(Spanned::new(
+                    left.span.start,
+                    identifier.span.end,
+                    Expression::new(ExpressionKind::Access {
+                        left: Box::new(left),
+                        identifier,
+                    }),
+                ))
+            }
 
             TokenType::LeftBrace => {
                 let initializer_list = self.initializer_list()?;
@@ -602,8 +830,14 @@ impl<'a, T> Parser<'a, T> where T: Scanner<'a> + 'a {
                 let span = Span::new(token.span.start, brace.span.end);
                 let identifier = self.user_identifier(&mut left)?;
 
-                Ok(Spanned::new_from_span(span, Expression::new(ExpressionKind::StructInitialization { identifier: Spanned::new_from_span(left.span, identifier), fields: initializer_list })))
-            },
+                Ok(Spanned::new_from_span(
+                    span,
+                    Expression::new(ExpressionKind::StructInitialization {
+                        identifier: Spanned::new_from_span(left.span, identifier),
+                        fields: initializer_list,
+                    }),
+                ))
+            }
 
             TokenType::LeftParen => {
                 let argument_list = self.argument_list()?;
@@ -611,17 +845,33 @@ impl<'a, T> Parser<'a, T> where T: Scanner<'a> + 'a {
                 let span = Span::new(left.span.start, end);
                 let (module, callee) = self.get_info_about_callee(left);
 
-                Ok(Spanned::new_from_span(span, Expression::new(ExpressionKind::Call { module, callee: Box::new(callee), arguments: argument_list })))
-            },
+                Ok(Spanned::new_from_span(
+                    span,
+                    Expression::new(ExpressionKind::Call {
+                        module,
+                        callee: Box::new(callee),
+                        arguments: argument_list,
+                    }),
+                ))
+            }
 
             _ => self.infix_error(token),
         }
     }
 
-    fn get_info_about_callee(&self, expression: Spanned<Expression<'a>>) -> (&'a str, Spanned<Expression<'a>>) {
+    fn get_info_about_callee(
+        &self,
+        expression: Spanned<Expression<'a>>,
+    ) -> (&'a str, Spanned<Expression<'a>>) {
         if let ExpressionKind::Access { left, identifier } = expression.node.kind() {
             if let ExpressionKind::Identifier(module) = left.node.kind() {
-                return (module, Spanned::new_from_span(identifier.span, Expression::new(ExpressionKind::Identifier(identifier.node))));
+                return (
+                    module,
+                    Spanned::new_from_span(
+                        identifier.span,
+                        Expression::new(ExpressionKind::Identifier(identifier.node)),
+                    ),
+                );
             }
         }
 
@@ -649,7 +899,7 @@ impl<'a, T> Parser<'a, T> where T: Scanner<'a> + 'a {
     }
 
     fn peek_equals(&mut self, expected: &TokenType<'a>) -> bool {
-        self.scanner.peek().map_or(false, | peek | match peek {
+        self.scanner.peek().map_or(false, |peek| match peek {
             Ok(Spanned { node, .. }) => *node == *expected,
 
             _ => false,
@@ -677,41 +927,64 @@ impl<'a, T> Parser<'a, T> where T: Scanner<'a> + 'a {
     fn lexer_error(&mut self, span: Span, cause: &'a str) -> Scanned<'a> {
         self.error_count += 1;
 
-        Err(Spanned { span, node: ParseError::LexingError(LexingError::with_cause(cause)) })
+        Err(Spanned {
+            span,
+            node: ParseError::LexingError(LexingError::with_cause(cause)),
+        })
     }
 
     fn prefix_error(&mut self, token: &Spanned<TokenType<'a>>) -> ExpressionResult<'a> {
         self.error_count += 1;
 
         let s = format!("invalid token in prefix expression '{}'", token.node);
-        Err(Spanned { span: token.span, node: ParseError::PrefixError(s) })
+        Err(Spanned {
+            span: token.span,
+            node: ParseError::PrefixError(s),
+        })
     }
 
     fn infix_error(&mut self, token: &Spanned<TokenType<'a>>) -> ExpressionResult<'a> {
         self.error_count += 1;
 
         let s = format!("invalid token in infix expression '{}'", token.node);
-        Err(Spanned { span: token.span, node: ParseError::InfixError(s) })
+        Err(Spanned {
+            span: token.span,
+            node: ParseError::InfixError(s),
+        })
     }
 
     fn consume_error(&mut self, actual: &Spanned<TokenType<'a>>, expected: String) -> Scanned<'a> {
         self.error_count += 1;
 
-        Err(Spanned { span: actual.span, node: ParseError::ConsumeError { actual: actual.node.clone(), expected } })
+        Err(Spanned {
+            span: actual.span,
+            node: ParseError::ConsumeError {
+                actual: actual.node.clone(),
+                expected,
+            },
+        })
     }
 
     fn sync(&mut self) {
         let mut previous = self.advance();
 
         while let Some(Ok(peek)) = self.scanner.peek() {
-            if let Ok(Spanned { node: TokenType::Semicolon, .. }) = previous {
+            if let Ok(Spanned {
+                node: TokenType::Semicolon,
+                ..
+            }) = previous
+            {
                 break;
             }
 
             match peek.node {
-                TokenType::Type | TokenType::Fn | TokenType::If | TokenType::Let | TokenType::Return => return,
+                TokenType::Type
+                | TokenType::Fn
+                | TokenType::If
+                | TokenType::Let
+                | TokenType::Return => return,
 
-                _ => {},
+                _ => {}
             }
 
             previous = self.advance();

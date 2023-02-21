@@ -1,9 +1,9 @@
 /*
  * An API to register new backends. In theory, it should allow anyone to add a new target *rather* easily.
- * 
- * This is also the file with the most comments in the whole codebase so far. The `Internal Compiler Design for Newton` 
+ *
+ * This is also the file with the most comments in the whole codebase so far. The `Internal Compiler Design for Newton`
  * document provides information and examples about the usage of this API.
- * 
+ *
  * Newton (C) 2023
  */
 
@@ -37,7 +37,14 @@ pub trait Backend {
 // `Display` is already implemented for `BackendInfo`, providing a default pretty-printed message for the backend.
 impl std::fmt::Display for dyn Backend {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "{} by {} ({})\n{}", self.backend_name(), self.backend_author(), self.backend_target(), self.backend_description())
+        write!(
+            f,
+            "{} by {} ({})\n{}",
+            self.backend_name(),
+            self.backend_author(),
+            self.backend_target(),
+            self.backend_description()
+        )
     }
 }
 
@@ -45,24 +52,33 @@ impl std::fmt::Display for dyn Backend {
  * This struct is where all the magic happens. You simply `::register()` the new backend, and in *theory* it should all work just fine.
  * Subject to change; if you are the maintainer of a backend, make sure to always check this file with every Newton update to see if
  * there's any changes to the backend API.
- * 
+ *
  * Any new backend must implement the aptly named `Backend` trait that provides the base functionality for the newly added target.
  */
 
 pub struct BackendAPI {
-    pub backends: std::sync::Mutex<std::collections::HashMap<String, std::rc::Rc<std::cell::RefCell<dyn Backend>>>>,
+    pub backends: std::sync::Mutex<
+        std::collections::HashMap<String, std::rc::Rc<std::cell::RefCell<dyn Backend>>>,
+    >,
 }
 
 impl BackendAPI {
     pub fn new() -> Self {
-        Self { 
+        Self {
             backends: std::sync::Mutex::new(std::collections::HashMap::new()),
         }
     }
 
     // Register the new backend, and push it to a HashMap.
-    pub fn register(&mut self, name: &'static str, backend: std::rc::Rc<std::cell::RefCell<dyn Backend>>) -> () {
-        self.backends.lock().unwrap().insert(name.to_owned(), backend);
+    pub fn register(
+        &mut self,
+        name: &'static str,
+        backend: std::rc::Rc<std::cell::RefCell<dyn Backend>>,
+    ) -> () {
+        self.backends
+            .lock()
+            .unwrap()
+            .insert(name.to_owned(), backend);
     }
 
     // Retrieve a specific backend by name.

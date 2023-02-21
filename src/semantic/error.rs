@@ -51,9 +51,7 @@ pub struct MismatchedMainFunctionArgumentsError {
 
 impl MismatchedMainFunctionArgumentsError {
     pub fn new(signature_found: String) -> Self {
-        Self {
-            signature_found,
-        }
+        Self { signature_found }
     }
 
     #[inline]

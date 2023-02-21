@@ -6,35 +6,26 @@ pub struct Span {
 
 impl Span {
     pub fn new(start: usize, end: usize) -> Self {
-        Self {
-            start,
-            end,
-        }
+        Self { start, end }
     }
 }
 
 #[derive(Debug)]
 pub struct Spanned<T> {
     pub span: Span,
-    pub node: T
+    pub node: T,
 }
 
 impl<T> Spanned<T> {
     pub fn new(start: usize, end: usize, node: T) -> Self {
         Self {
-            span: Span {
-                start,
-                end,
-            },
+            span: Span { start, end },
             node,
         }
     }
 
     pub fn new_from_span(span: Span, node: T) -> Self {
-        Self {
-            span,
-            node,
-        }
+        Self { span, node }
     }
 }
 
@@ -42,7 +33,7 @@ impl<T: Clone> Clone for Spanned<T> {
     fn clone(&self) -> Self {
         Self {
             span: self.span,
-            node: self.node.clone()
+            node: self.node.clone(),
         }
     }
 }

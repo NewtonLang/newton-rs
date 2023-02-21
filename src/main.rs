@@ -1,20 +1,22 @@
-use newton_rs::Source;
 use newton_rs::lexer::lexer::*;
 use newton_rs::parser::parser::*;
+use newton_rs::Source;
 
 fn main() {
-    let source: Source = Source::new("main", "
+    let source: Source = Source::new(
+        "main",
+        "
+    // You can now declare structs and enumerators!
     type Vec2 struct {
-        x: i64,
-        y: i64
+        @somefield: i32;
+        @someotherfield: i32;
+
+        fn init() => Vec2 {};
     }
 
-    type Vec3 struct {
-        x: i64,
-        y: i64,
-        z: i64
-    }
-    ");
+    type Colors enum: u64 {}
+    ",
+    );
 
     let lexer = Lexer::new(&source);
     let mut parser = Parser::new(lexer);
