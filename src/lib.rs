@@ -10,8 +10,8 @@ use parser::span::Span;
 
 #[derive(Debug)]
 pub struct Source {
-    name: String,
-    code: String,
+    pub name: String,
+    pub code: String,
 }
 
 impl Source {
@@ -24,16 +24,6 @@ impl Source {
 
     pub fn slice(&self, span: Span) -> &str {
         &self.code[ span.start ..= span.end ]
-    }
-
-    #[inline]
-    pub fn name(&self) -> &String {
-        &self.name
-    }
-
-    #[inline]
-    pub fn code(&self) -> &String {
-        &self.code
     }
 }
 

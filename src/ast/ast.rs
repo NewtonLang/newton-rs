@@ -7,10 +7,10 @@ use crate::parser::error::*;
 pub enum ExpressionKind<'a> {
     Error(ParseError<'a>),
     NullLiteral,
-    DecLiteral(&'static str),
-    FloatLiteral(&'static str),
-    StringLiteral(&'static str),
-    Char(&'static str),
+    DecLiteral(&'a str),
+    FloatLiteral(&'a str),
+    StringLiteral(&'a str),
+    Char(&'a str),
     Reference(Spanned<TokenType<'a>>, Box<Spanned<Expression<'a>>>),
     Dereference(Spanned<TokenType<'a>>, Box<Spanned<Expression<'a>>>),
     Negate(Spanned<TokenType<'a>>, Box<Spanned<Expression<'a>>>),
@@ -18,7 +18,7 @@ pub enum ExpressionKind<'a> {
     Binary(Box<Spanned<Expression<'a>>>, Spanned<TokenType<'a>>, Box<Spanned<Expression<'a>>>),
     BoolBinary(Box<Spanned<Expression<'a>>>, Spanned<TokenType<'a>>, Box<Spanned<Expression<'a>>>),
     Cast(Box<Spanned<Expression<'a>>>, Spanned<TokenType<'a>>, Spanned<Type<'a>>),
-    Identifier(&'static str),
+    Identifier(&'a str),
     New(Box<Spanned<Expression<'a>>>),
     SizeOf(Type<'a>),
 
@@ -29,14 +29,14 @@ pub enum ExpressionKind<'a> {
     },
 
     Call {
-        module: &'static str,
+        module: &'a str,
         callee: Box<Spanned<Expression<'a>>>,
         arguments: ArgumentList<'a>,
     },
 
     Access {
         left: Box<Spanned<Expression<'a>>>,
-        identifier: Spanned<&'static str>,
+        identifier: Spanned<&'a str>,
     },
 
     StructInitialization {
@@ -168,9 +168,9 @@ impl<'a> std::fmt::Display for Expression<'a> {
 }
 
 #[derive(Debug, PartialEq, Eq)]
-pub struct Program<'a> (Vec<TopLevel<'a>>);
+pub struct Program<'a> (pub Vec<TopLevel<'a>>);
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Default)]
 pub struct Block<'a> (pub Vec<Statement<'a>>);
 
 #[derive(Debug, PartialEq, Eq)]
@@ -197,7 +197,7 @@ impl<'a> std::fmt::Display for ArgumentList<'a> {
 }
 
 #[derive(Debug, PartialEq)]
-pub struct InitializerList<'a> (pub Vec<(Spanned<&'static str>, Spanned<Expression<'a>>)>);
+pub struct InitializerList<'a> (pub Vec<(Spanned<&'a str>, Spanned<Expression<'a>>)>);
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum TopLevel<'a> {
@@ -210,7 +210,7 @@ pub enum TopLevel<'a> {
     },
 
     Import {
-        name: Spanned<&'static str>,
+        name: Spanned<&'a str>,
     },
 
     TypeDeclaration {
@@ -264,8 +264,8 @@ impl<'a> std::fmt::Display for TopLevel<'a> {
 #[derive(Debug, PartialEq, Eq)]
 pub enum TypeDeclaration<'a> {
     StructDefinition {
-        name: Spanned<&'static str>,
-        fields: Vec<(Spanned<&'static str>, Spanned<Type<'a>>)>,
+        name: Spanned<&'a str>,
+        fields: Vec<(Spanned<&'a str>, Spanned<Type<'a>>)>,
     }
 }
 
