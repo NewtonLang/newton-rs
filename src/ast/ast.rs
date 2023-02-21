@@ -66,7 +66,7 @@ impl<'a> Expression<'a> {
         }
     }
 
-    pub fn is_error(&mut self) -> bool {
+    pub fn is_error(&self) -> bool {
         if let ExpressionKind::Error(..) = self.kind {
             return true;
         }
@@ -75,25 +75,25 @@ impl<'a> Expression<'a> {
     }
 
     #[inline]
-    pub fn ty(&mut self) -> std::cell::Ref<Option<Type>> {
+    pub fn ty(&self) -> std::cell::Ref<Option<Type>> {
         self.ty.borrow()
     }
 
     #[inline]
-    pub fn clone_ty(&mut self) -> Option<Type> {
+    pub fn clone_ty(&self) -> Option<Type> {
         self.ty.borrow().clone()
     }
 
     #[inline]
-    pub fn kind(&mut self) -> &ExpressionKind<'a> {
+    pub fn kind(&self) -> &ExpressionKind<'a> {
         &self.kind
     }
 
-    pub fn set_ty(&mut self, ty: Type<'a>) {
+    pub fn set_ty(&self, ty: Type<'a>) {
         self.ty.replace(Some(ty));
     }
 
-    pub fn sub_expressions(&mut self) -> Vec<&Spanned<Expression<'a>>> {
+    pub fn sub_expressions(&self) -> Vec<&Spanned<Expression<'a>>> {
         match self.kind() {
             ExpressionKind::Error(_) => panic!(),
             ExpressionKind::NullLiteral | ExpressionKind::DecLiteral(_) | ExpressionKind::FloatLiteral(_) | ExpressionKind::StringLiteral(_) | ExpressionKind::Char(_) | ExpressionKind::SizeOf(_) | ExpressionKind::Identifier(_) => vec![],
@@ -182,6 +182,12 @@ impl<'a> Parameter<'a> {
     }
 }
 
+#[derive(Debug, PartialEq, Eq, Default)]
+pub struct ParameterList<'a> {
+    pub varargs: bool,
+    pub parameters: Vec<Parameter<'a>>,
+}
+
 #[derive(Debug, PartialEq, Eq)]
 pub struct ArgumentList<'a> (pub Vec<Spanned<Expression<'a>>>);
 
@@ -203,7 +209,7 @@ pub struct InitializerList<'a> (pub Vec<(Spanned<&'a str>, Spanned<Expression<'a
 pub enum TopLevel<'a> {
     FunctionDeclaration {
         name: Spanned<&'a str>,
-        arguments: ArgumentList<'a>,
+        arguments: ParameterList<'a>,
         body: Block<'a>,
         return_type: Spanned<Type<'a>>,
         is_external: bool,
@@ -219,45 +225,6 @@ pub enum TopLevel<'a> {
 
     Error {
         error: Spanned<ParseError<'a>>,
-    }
-}
-
-impl<'a> std::fmt::Display for TopLevel<'a> {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        match self {
-            Self::FunctionDeclaration { 
-                name, 
-                arguments, 
-                body: _, 
-                return_type, 
-                is_external } => {
-                    let mut external = String::new();
-
-                    if *is_external {
-                        external.push_str("extern");
-                    }
-
-                    let name = format!("{}", name.node);
-                    let return_type = format!("{}", return_type.node);
-                    let mut args = Vec::new();
-
-                    for argument in &arguments.0 {
-                        args.push(format!("{}", argument.node));
-                    }
-
-                    let mut signature = String::new();
-
-                    if *is_external {
-                        signature.push_str(&format!("extern {} {}({});\n", return_type, name, args.join(", ")));
-                    } else {
-                        signature.push_str(&format!("{} {} ({}) {{\n", return_type, name, args.join(", ")));
-                    }
-
-                    write!(f, "{}", signature)
-                },
-
-            _ => panic!(),
-        }
     }
 }
 

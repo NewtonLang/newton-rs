@@ -401,7 +401,7 @@ impl<'a, T> Parser<'a, T> where T: Scanner<'a> + 'a {
         Err(self.eof().unwrap_err())
     }
 
-    fn user_identifier(&self, expression: &Spanned<Expression<'a>>) -> ParseResult<'a, UserIdentifier<'a>> {
+    fn user_identifier(&self, expression: &mut Spanned<Expression<'a>>) -> ParseResult<'a, UserIdentifier<'a>> {
         Ok(match expression.node.kind() {
             ExpressionKind::Identifier(identifier) => UserIdentifier::new(&self.source.name, identifier),
             ExpressionKind::Access { left, identifier } => {
@@ -429,8 +429,8 @@ impl<'a, T> Parser<'a, T> where T: Scanner<'a> + 'a {
                         },
 
                         Spanned { node: TokenType::Identifier(_), .. } => {
-                            let expression = self.parse_expression(Precedence::Assignment, true)?;
-                            let identifier = self.user_identifier(&expression)?;
+                            let mut expression = self.parse_expression(Precedence::Assignment, true)?;
+                            let identifier = self.user_identifier(&mut expression)?;
 
                             Ok(Spanned::new_from_span(expression.span, Type::Simple(Simple::UserDefinedType(identifier))))
                         },
@@ -543,7 +543,7 @@ impl<'a, T> Parser<'a, T> where T: Scanner<'a> + 'a {
         }
     }
 
-    fn infix(&mut self, token: &Spanned<TokenType<'a>>, left: Spanned<Expression<'a>>, no_struct: bool) -> ExpressionResult<'a> {
+    fn infix(&mut self, token: &Spanned<TokenType<'a>>, mut left: Spanned<Expression<'a>>, no_struct: bool) -> ExpressionResult<'a> {
         let tok = &token.node;
 
         match tok {
@@ -600,7 +600,7 @@ impl<'a, T> Parser<'a, T> where T: Scanner<'a> + 'a {
                 let initializer_list = self.initializer_list()?;
                 let brace = self.consume(TokenType::RightBrace)?;
                 let span = Span::new(token.span.start, brace.span.end);
-                let identifier = self.user_identifier(&left)?;
+                let identifier = self.user_identifier(&mut left)?;
 
                 Ok(Spanned::new_from_span(span, Expression::new(ExpressionKind::StructInitialization { identifier: Spanned::new_from_span(left.span, identifier), fields: initializer_list })))
             },
