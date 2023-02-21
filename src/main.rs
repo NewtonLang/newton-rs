@@ -15,6 +15,8 @@ fn main() {
     }
 
     type Colors enum: u64 {}
+
+    type Pair struct<K, V> {}
     ",
     );
 

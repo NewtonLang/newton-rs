@@ -287,6 +287,11 @@ where
 
     fn struct_declaration(&mut self, name: &Spanned<&'a str>) -> TopLevelResult<'a> {
         self.consume(TokenType::Struct)?;
+
+        if self.peek_equals(&TokenType::Smaller) {
+            self.consume_generic_parameters()?;
+        }
+
         self.consume(TokenType::LeftBrace)?;
 
         let mut fields = Vec::new();
@@ -579,6 +584,28 @@ where
                 return Err(Spanned::new_from_span(expression.span, ParseError::InternalError("the expression for a user identifier has to be an identifier or access expression")));
             }
         })
+    }
+
+    fn consume_generic_parameters(&mut self) -> ParseResult<'a, Vec<Spanned<&'a str>>> {
+        self.consume(TokenType::Smaller)?;
+
+        let mut generic_parameters = vec![];
+
+        if !self.at_end() && !self.peek_equals(&TokenType::Greater) {
+            loop {
+                generic_parameters.push(self.consume_identifier()?);
+
+                if self.at_end() || self.peek_equals(&TokenType::Greater) {
+                    break;
+                } else {
+                    self.consume(TokenType::Comma)?;
+                }
+            }
+        }
+
+        self.consume(TokenType::Greater)?;
+
+        Ok(generic_parameters)
     }
 
     fn consume_type(&mut self) -> ParseResult<'a, Spanned<Type<'a>>> {
