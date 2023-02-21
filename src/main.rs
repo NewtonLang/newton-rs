@@ -6,17 +6,23 @@ fn main() {
     let source: Source = Source::new(
         "main",
         "
-    // You can now declare structs and enumerators!
-    type Vec2 struct {
-        @somefield: i32;
-        @someotherfield: i32;
+    type Pair struct<K, V> {
+        @key: K;
+        @value: V;
 
-        fn init() => Vec2 {};
+        fn init(self: *Pair, key: K, value: V) => Pair {
+            self.key = key;
+            self.value = value;
+        };
+
+        fn get_key(self: *Pair) => K {
+            return self.key;
+        };
+
+        fn get_value(self: *Pair) => V {
+            return self.value;
+        };
     }
-
-    type Colors enum: u64 {}
-
-    type Pair struct<K, V> {}
     ",
     );
 
