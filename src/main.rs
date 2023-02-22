@@ -30,6 +30,8 @@ fn main() {
         @unsized_array: [?]i32;
         @sized_array: [64]i32;
     }
+
+    type Nullable<T> = ?T;
     ",
     );
 

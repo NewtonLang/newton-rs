@@ -30,6 +30,7 @@ impl<'a> std::fmt::Display for UserIdentifier<'a> {
 pub enum Type<'a> {
     Simple(Simple<'a>),
     Complex(Complex<'a>),
+    Nullable(Nullable<'a>),
 }
 
 impl<'a> Type<'a> {
@@ -67,12 +68,20 @@ impl<'a> Type<'a> {
         }
     }
 
+    pub fn is_nullable(&self) -> bool {
+        match self {
+            Type::Nullable(_) => true,
+            _ => false,
+        }
+    }
+
     pub fn simple(&self) -> &Simple {
         match self {
             Type::Simple(ty) => ty,
             Type::Complex(Complex::Array(arr)) => &arr.base_type,
             Type::Complex(Complex::Pointer(ptr)) => &ptr.base_type,
             Type::Complex(Complex::Ref(_ref)) => &_ref.base_type,
+            Type::Nullable(nullable) => &nullable.inner_type,
         }
     }
 
@@ -92,6 +101,7 @@ impl<'a> std::fmt::Display for Type<'a> {
         match self {
             Type::Simple(ty) => write!(f, "{}", ty),
             Type::Complex(ty) => write!(f, "{}", ty),
+            Type::Nullable(ty) => write!(f, "{}", ty),
         }
     }
 }
@@ -200,6 +210,30 @@ impl std::fmt::Display for Float {
 
             _ => panic!("floats cannot have any size other than 32 or 64 so this is pointless lol"),
         }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Nullable<'a> {
+    inner_type: Simple<'a>,
+}
+
+impl<'a> Nullable<'a> {
+    pub fn new(inner_type: Simple<'a>) -> Self {
+        Self {
+            inner_type
+        }
+    }
+
+    #[inline]
+    pub fn inner_type(&mut self) -> Simple<'a> {
+        self.inner_type.clone()
+    }
+}
+
+impl<'a> std::fmt::Display for Nullable<'a> {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "?{}", self.inner_type)
     }
 }
 

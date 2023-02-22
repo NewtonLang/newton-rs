@@ -293,6 +293,12 @@ pub enum TypeDeclaration<'a> {
         name: Spanned<&'a str>,
         fields: Vec<(Spanned<&'a str>, Spanned<Type<'a>>)>,
     },
+
+    TypeAlias {
+        name: Spanned<&'a str>,
+        generic_parameters: Vec<Spanned<&'a str>>,
+        ty: Spanned<Type<'a>>,
+    },
 }
 
 #[derive(Debug, PartialEq, Eq)]

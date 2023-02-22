@@ -383,10 +383,27 @@ where
         });
     }
 
+    fn type_alias_declaration(&mut self, name: &Spanned<&'a str>) -> TopLevelResult<'a> {
+        let generic_parameters = self.consume_generic_parameters()?;
+        self.consume(TokenType::Equals)?;
+
+        let ty = self.consume_type()?;
+
+        self.consume(TokenType::Semicolon)?;
+
+        return Ok(TopLevel::TypeDeclaration {
+            ty: TypeDeclaration::TypeAlias { name: *name, generic_parameters, ty }
+        });
+    }
+
     fn type_declaration_statement(&mut self) -> TopLevelResult<'a> {
         self.consume(TokenType::Type)?;
 
         let name = self.consume_identifier()?;
+
+        if self.peek_equals(&TokenType::Smaller) {
+            return self.type_alias_declaration(&name);
+        }
 
         if self.peek_equals(&TokenType::Struct) {
             return self.struct_declaration(&name);
@@ -711,6 +728,27 @@ where
                             end,
                             Type::Complex(Complex::Array(Array::new(inner, Box::new(size))))
                         ))
+                    }
+
+                    Spanned {
+                        node: TokenType::Question,
+                        ..
+                    } => {
+                        let start = self.advance()?.span.start;
+                        let inner_type = self.consume_type()?;
+
+                        let (inner, end) = if let Type::Simple(s) = inner_type.node {
+                            (s, inner_type.span.end)
+                        } else {
+                            return Err(Spanned::new_from_span(inner_type.span, ParseError::InternalError("reached unreachable code while attempting to parse a nullable type")));
+                        };
+
+                        Ok(Spanned::new(
+                            start,
+                            end,
+                            Type::Nullable(Nullable::new(inner))
+                        ))
+
                     }
 
                     _ => {
