@@ -3,7 +3,7 @@ use crate::parser::error::*;
 use crate::parser::span::*;
 use crate::types::types::*;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum ExpressionKind<'a> {
     Error(ParseError<'a>),
     NullLiteral,
@@ -57,7 +57,7 @@ pub enum ExpressionKind<'a> {
     },
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Expression<'a> {
     ty: std::cell::RefCell<Option<Type<'a>>>,
     kind: ExpressionKind<'a>,
@@ -87,12 +87,12 @@ impl<'a> Expression<'a> {
     }
 
     #[inline]
-    pub fn ty(&self) -> std::cell::Ref<Option<Type>> {
+    pub fn ty(&self) -> std::cell::Ref<Option<Type<'a>>> {
         self.ty.borrow()
     }
 
     #[inline]
-    pub fn clone_ty(&self) -> Option<Type> {
+    pub fn clone_ty(&self) -> Option<Type<'a>> {
         self.ty.borrow().clone()
     }
 
@@ -237,7 +237,7 @@ pub struct ParameterList<'a> {
     pub parameters: Vec<Parameter<'a>>,
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ArgumentList<'a>(pub Vec<Spanned<Expression<'a>>>);
 
 impl<'a> std::fmt::Display for ArgumentList<'a> {
@@ -251,7 +251,7 @@ impl<'a> std::fmt::Display for ArgumentList<'a> {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct InitializerList<'a>(pub Vec<(Spanned<&'a str>, Spanned<Expression<'a>>)>);
 
 #[derive(Debug, PartialEq, Eq)]

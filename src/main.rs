@@ -10,18 +10,25 @@ fn main() {
         @key: K;
         @value: V;
 
-        fn init(self: *Pair, key: K, value: V) => Pair {
-            self.key = key;
-            self.value = value;
+        fn init(self: &Pair, key: K, value: V) => Pair {
+            return new Pair {
+                key,
+                value
+            };
         };
 
-        fn get_key(self: *Pair) => K {
+        fn get_key(self: &Pair) => K {
             return self.key;
         };
 
-        fn get_value(self: *Pair) => V {
+        fn get_value(self: &Pair) => V {
             return self.value;
         };
+    }
+
+    type test struct {
+        @unsized_array: [?]i32;
+        @sized_array: [64]i32;
     }
     ",
     );

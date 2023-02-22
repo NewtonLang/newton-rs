@@ -658,6 +658,61 @@ where
                         ))
                     }
 
+                    Spanned {
+                        node: TokenType::Ampersand,
+                        ..
+                    } => {
+                        let mut counter = 1;
+                        let start = self.advance()?.span.start;
+
+                        while self.match_token(TokenType::Ampersand)? {
+                            counter += 1;
+                        }
+
+                        let ty = self.consume_type()?;
+                        let (inner, end) = if let Type::Simple(s) = ty.node {
+                            (s, ty.span.end)
+                        } else {
+                            return Err(Spanned::new_from_span(ty.span, ParseError::InternalError("reached unreachable code while attempting to parse a reference type")));
+                        };
+
+                        Ok(Spanned::new(
+                            start,
+                            end,
+                            Type::Complex(Complex::Ref(Ref::new(inner, counter))),
+                        ))
+                    }
+
+                    Spanned {
+                        node: TokenType::LeftBracket,
+                        ..
+                    } => {
+                        let mut size: Option<Expression> = None;
+                        let start = self.advance()?.span.start;
+
+                        while !self.match_token(TokenType::RightBracket)? {
+                            if self.peek_equals(&TokenType::Question) {
+                                self.advance()?;
+                                size = None;
+                            } else {
+                                size = Some(self.expression(true).unwrap().node);
+                            }
+                        }
+
+                        let ty = self.consume_type()?;
+                        let (inner, end) = if let Type::Simple(s) = ty.node {
+                            (s, ty.span.end)
+                        } else {
+                            return Err(Spanned::new_from_span(ty.span, ParseError::InternalError("reached unreachable code while attempting to parse an array type")));
+                        };
+
+                        Ok(Spanned::new(
+                            start,
+                            end,
+                            Type::Complex(Complex::Array(Array::new(inner, Box::new(size))))
+                        ))
+                    }
+
                     _ => {
                         let token = Spanned::clone(&peek);
                         Err(self.consume_error(&token, "type".to_owned()).unwrap_err())

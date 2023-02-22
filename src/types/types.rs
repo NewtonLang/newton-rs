@@ -1,3 +1,5 @@
+use crate::ast::ast::*;
+
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct UserIdentifier<'a> {
     file: &'a str,
@@ -265,11 +267,11 @@ impl<'a> std::fmt::Display for Ref<'a> {
 #[derive(Debug, Clone, PartialEq)]
 pub struct Array<'a> {
     base_type: Simple<'a>,
-    size: Option<u64>,
+    size: Box<Option<Expression<'a>>>,
 }
 
 impl<'a> Array<'a> {
-    pub fn new(base_type: Simple<'a>, size: Option<u64>) -> Self {
+    pub fn new(base_type: Simple<'a>, size: Box<Option<Expression<'a>>>) -> Self {
         Self { base_type, size }
     }
 
@@ -279,16 +281,29 @@ impl<'a> Array<'a> {
     }
 
     #[inline]
-    pub fn size(&mut self) -> Option<u64> {
-        self.size
+    pub fn size(&mut self) -> Expression<'a> {
+        self.size.clone().unwrap()
     }
 }
 
 impl<'a> std::fmt::Display for Array<'a> {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        match self.size {
-            Some(sz) => write!(f, "[{}]{}", sz, self.base_type),
-            None => write!(f, "[?]{}", self.base_type),
+        match self.size.clone().unwrap().kind() {
+            ExpressionKind::DecLiteral(lit) => {
+                match lit {
+                    c if lit.parse::<u64>().is_ok() => {
+                        write!(f, "[{}]{}", c, self.base_type)
+                    }
+
+                    &"*" => {
+                        write!(f, "[*]{}", self.base_type)
+                    }
+
+                    _ => panic!("attempted to use non numerical value as array size")
+                }
+            }
+
+            _ => panic!("invalid array size")
         }
     }
 }
