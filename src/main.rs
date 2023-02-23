@@ -1,6 +1,6 @@
+use newton_rs::Source;
 use newton_rs::lexer::lexer::*;
 use newton_rs::parser::parser::*;
-use newton_rs::Source;
 
 fn main() {
     let source: Source = Source::new(

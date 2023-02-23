@@ -3,7 +3,7 @@ use crate::parser::error::*;
 use crate::parser::span::*;
 use crate::types::types::*;
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ExpressionKind<'a> {
     Error(ParseError<'a>),
     NullLiteral,
@@ -57,7 +57,7 @@ pub enum ExpressionKind<'a> {
     },
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Eq)]
 pub struct Expression<'a> {
     ty: std::cell::RefCell<Option<Type<'a>>>,
     kind: ExpressionKind<'a>,
@@ -251,7 +251,7 @@ impl<'a> std::fmt::Display for ArgumentList<'a> {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct InitializerList<'a>(pub Vec<(Spanned<&'a str>, Spanned<Expression<'a>>)>);
 
 #[derive(Debug, PartialEq, Eq)]

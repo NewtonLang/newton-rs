@@ -26,7 +26,7 @@ impl<'a> std::fmt::Display for UserIdentifier<'a> {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Type<'a> {
     Simple(Simple<'a>),
     Complex(Complex<'a>),
@@ -237,7 +237,7 @@ impl<'a> std::fmt::Display for Nullable<'a> {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Complex<'a> {
     Pointer(Pointer<'a>),
     Ref(Ref<'a>),
@@ -254,7 +254,7 @@ impl<'a> std::fmt::Display for Complex<'a> {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Pointer<'a> {
     base_type: Simple<'a>,
     size: u8,
@@ -276,7 +276,7 @@ impl<'a> std::fmt::Display for Pointer<'a> {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Ref<'a> {
     base_type: Simple<'a>,
     size: u8,
@@ -298,7 +298,7 @@ impl<'a> std::fmt::Display for Ref<'a> {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Array<'a> {
     base_type: Simple<'a>,
     size: Box<Option<Expression<'a>>>,
